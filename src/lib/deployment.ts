@@ -8,10 +8,15 @@ export const deployment = {
     "https://explorer-bradbury.genlayer.com/address/0xEd6B2fa740D0e8130CB8b767E7084fC7257729e3",
   explorerTx:
     "https://explorer-bradbury.genlayer.com/tx/0xb091e533802a3b3a42ac85624ad9486f7921e645530c2fbf2f043efc37875d77",
+  liveApp: "https://proofpilot-two.vercel.app",
+  githubRepo: "https://github.com/Manablaq/proofpilot",
   rpc: "https://rpc-bradbury.genlayer.com",
   network: "GenLayer Bradbury",
   smokeTestStatus: "passed",
   validatorAgreement: "5/5",
+  campaignId: "campaign_1",
+  campaignTitle: "ProofPilot Smoke Test",
+  campaignStatus: "ACTIVE",
 } as const;
 
 export const navItems = [

@@ -6,6 +6,7 @@
 | --- | --- |
 | Network | GenLayer Bradbury Testnet |
 | RPC | `https://rpc-bradbury.genlayer.com` |
+| Live app | https://proofpilot-two.vercel.app |
 | Contract address | `0xEd6B2fa740D0e8130CB8b767E7084fC7257729e3` |
 | Deployment transaction hash | `0xb091e533802a3b3a42ac85624ad9486f7921e645530c2fbf2f043efc37875d77` |
 | Deployment status | Successful |
