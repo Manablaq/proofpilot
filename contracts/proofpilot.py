@@ -330,9 +330,91 @@ def pp_bucket(v: int, m: int) -> int:
     return 1
 
 
+def pp_rule_expected(f: dict) -> dict:
+    scores = {
+        "live_app_availability": 15 if f["live_app_reachable"] else 0,
+        "github_repository_availability": 10 if f["github_readme_reachable"] else 0,
+        "readme_documentation_quality": 0,
+        "contract_address_consistency": 0,
+        "deployment_transaction_proof": 0,
+        "reviewer_feedback_addressed": 0,
+        "professional_presentation": 0,
+        "risk_broken_links_or_mismatch_checks": 0,
+    }
+    if f["github_readme_reachable"]:
+        n = int(f["github_readme_mentions_proofpilot"]) + int(f["github_readme_mentions_genlayer"]) + int(f["github_readme_mentions_builder_review"])
+        scores["readme_documentation_quality"] = 15 if n >= 3 else 10 if n >= 2 else 5
+    if f["reviewer_feedback_present"] and f["fixes_explanation_present"]:
+        scores["reviewer_feedback_addressed"] = 15
+    elif f["reviewer_feedback_present"] or f["fixes_explanation_present"]:
+        scores["reviewer_feedback_addressed"] = 8
+    if f["live_app_reachable"] and f["github_readme_reachable"]:
+        scores["professional_presentation"] = 5 if f["live_app_mentions_proofpilot"] else 3
+    elif f["live_app_reachable"] or f["github_readme_reachable"]:
+        scores["professional_presentation"] = 2
+    if f["live_app_reachable"] and f["github_readme_reachable"] and f["contract_address_format_valid"] and f["deployment_tx_hash_format_valid"]:
+        scores["risk_broken_links_or_mismatch_checks"] = 3
+    elif f["live_app_reachable"] or f["github_readme_reachable"]:
+        scores["risk_broken_links_or_mismatch_checks"] = 1
+    total = sum(scores.values())
+    if total >= 75:
+        status, rec = READY_FOR_REVIEW, APPROVE
+    elif total >= 60:
+        status, rec = NEEDS_MINOR_FIXES, MINOR
+    elif total >= 40:
+        status, rec = NEEDS_MAJOR_FIXES, MAJOR
+    else:
+        status, rec = NOT_READY, REJECT
+    core_fail = (not f["live_app_reachable"]) or (not f["github_readme_reachable"])
+    if core_fail:
+        risk = HIGH
+    elif "contract_address" in f["fetch_failures"] or "deployment_tx" in f["fetch_failures"]:
+        risk = MEDIUM
+    else:
+        risk = LOW
+    confidence = HIGH if f["live_app_reachable"] and f["github_readme_reachable"] else MEDIUM if f["live_app_reachable"] or f["github_readme_reachable"] else LOW
+    return {"scores": scores, "total_score": total, "status": status, "recommendation": rec,
+            "risk_level": risk, "confidence": confidence}
+
+
+def pp_apply_rules(r: dict, f: dict) -> dict:
+    e = pp_rule_expected(f)
+    r["scores"] = e["scores"]
+    r["total_score"] = e["total_score"]
+    r["status"] = e["status"]
+    r["recommendation"] = e["recommendation"]
+    r["risk_level"] = e["risk_level"]
+    r["confidence"] = e["confidence"]
+    ff = [str(x) for x in r.get("fetch_failures", [])]
+    miss = [str(x) for x in r.get("missing_evidence", [])]
+    for src in f["fetch_failures"]:
+        if src not in ff and src not in miss and len(ff) < 5:
+            ff.append(src)
+    r["fetch_failures"] = ff[:5]
+    r["missing_evidence"] = miss[:5]
+    return r
+
+
+def pp_rules_ok(r: dict, f: dict) -> bool:
+    e = pp_rule_expected(f)
+    if int(r["total_score"]) != int(e["total_score"]):
+        return False
+    for k in ["status", "recommendation", "risk_level", "confidence"]:
+        if r[k] != e[k]:
+            return False
+    for k in RUBRIC.keys():
+        if int(r["scores"][k]) != int(e["scores"][k]):
+            return False
+    rep = pp_j(r["missing_evidence"]) + pp_j(r["fetch_failures"])
+    for src in f["fetch_failures"]:
+        if src not in rep:
+            return False
+    return True
+
+
 def pp_run_review(s: dict) -> dict:
     facts = pp_compact_facts(s)
-    review = pp_norm_review(pp_ai(pp_prompt(s, facts)), facts)
+    review = pp_norm_review(pp_apply_rules(pp_norm_review(pp_ai(pp_prompt(s, facts)), facts), facts), facts)
     return {"facts": facts, "review": review}
 
 
@@ -343,32 +425,16 @@ def pp_compare_review(s: dict, leaders_res) -> bool:
         l = json.loads(pp_json_text(leaders_res.calldata))
         lf, lr = l["facts"], pp_norm_review(l["review"], l["facts"])
         vf = pp_compact_facts(s)
-        vr = pp_norm_review(pp_ai(pp_prompt(s, vf)), vf)
         for k in ["live_app_reachable", "live_app_mentions_proofpilot", "live_app_mentions_ai_consensus",
                   "github_readme_reachable", "github_readme_mentions_proofpilot", "github_readme_mentions_genlayer",
                   "github_readme_mentions_builder_review", "docs_deduped", "contract_address_format_valid",
                   "deployment_tx_hash_format_valid", "reviewer_feedback_present", "fixes_explanation_present"]:
             if bool(lf[k]) != bool(vf[k]):
                 return False
-        for k in ["status", "recommendation", "risk_level"]:
-            if lr[k] != vr[k]:
-                return False
-        if abs(CONFIDENCE_LEVELS.index(lr["confidence"]) - CONFIDENCE_LEVELS.index(vr["confidence"])) > 1:
-            return False
-        if abs(int(lr["total_score"]) - int(vr["total_score"])) > 5:
-            return False
-        for k, m in RUBRIC.items():
-            if abs(int(lr["scores"][k]) - int(vr["scores"][k])) > 3:
-                return False
-            if k in ["contract_address_consistency", "deployment_transaction_proof"]:
-                if pp_bucket(int(lr["scores"][k]), m) != pp_bucket(int(vr["scores"][k]), m):
-                    return False
         for src in vf["fetch_failures"]:
-            a = pp_j(lr["fetch_failures"]) + pp_j(lr["missing_evidence"])
-            b = pp_j(vr["fetch_failures"]) + pp_j(vr["missing_evidence"])
-            if src not in a or src not in b:
+            if src not in lf["fetch_failures"]:
                 return False
-        return True
+        return pp_rules_ok(lr, vf)
     except Exception:
         return False
 
