@@ -820,8 +820,8 @@ class ProofPilot(gl.Contract):
         }
 
     def _fetch_all_evidence(self, submission: Submission) -> dict:
-        contract_url = self._build_explorer_contract_url(submission.contract_address)
-        tx_url = self._build_explorer_tx_url(submission.deployment_tx_hash)
+        contract_url = self._build_explorer_contract_url(submission.contract_address) if submission.contract_address else ""
+        tx_url = self._build_explorer_tx_url(submission.deployment_tx_hash) if submission.deployment_tx_hash else ""
         live_app = self._fetch_source("live_app", submission.live_app_url, "render", MAX_LIVE_APP_EVIDENCE_LEN)
         github = self._fetch_source("github", submission.github_repo_url, "get", MAX_GITHUB_EVIDENCE_LEN)
         docs = self._fetch_source("docs", submission.docs_url, "get", MAX_DOCS_EVIDENCE_LEN)
@@ -1028,6 +1028,9 @@ Return exactly one JSON object matching OUTPUT_SCHEMA. If a fetch failed, includ
         for key in self._required_report_keys():
             if key not in report:
                 raise Exception("AI review missing required key: " + key)
+        for key in report.keys():
+            if key not in self._required_report_keys():
+                raise Exception("AI review contains unsupported key: " + str(key))
         if str(report["rubric_version"]) != RUBRIC_VERSION_V1:
             raise Exception("Unsupported rubric_version")
         self._validate_review_status(str(report["status"]))
@@ -1271,8 +1274,8 @@ Return exactly one JSON object matching OUTPUT_SCHEMA. If a fetch failed, includ
             raise Exception("Submission is closed")
         if caller != campaign.owner:
             raise Exception("Only the campaign owner can run review in contract v1")
-        if submission.status == SUBMISSION_REVIEWED:
-            raise Exception("Submission already reviewed; request re-check before another review")
+        if submission.status not in [SUBMISSION_SUBMITTED, SUBMISSION_RECHECK_REQUESTED]:
+            raise Exception("Submission must be submitted or re-check requested")
 
         previous_status = submission.status
         submission.status = SUBMISSION_UNDER_REVIEW
@@ -1304,26 +1307,25 @@ Return exactly one JSON object matching OUTPUT_SCHEMA. If a fetch failed, includ
                 "raw_review_json": raw_review_json,
             }, sort_keys=True)
 
-        result_raw = gl.eq_principle.prompt_non_comparative(
-            _fetch_and_review,
-            task=(
-                "Fetch the submitted project evidence through GenLayer web access, "
-                "then review only the bounded fetched evidence against ProofPilot rubric_v1."
-            ),
-            criteria=(
-                "Validate format only. Accept if ALL of these are true: "
-                "(1) valid JSON object, "
-                "(2) contains a 'fetched' object, "
-                "(3) fetched contains fetch_results, source_urls, evidence, and warnings, "
-                "(4) contains raw_review_json, "
-                "(5) raw_review_json parses as JSON, "
-                "(6) raw_review_json contains total_score, status, recommendation, "
-                "risk_level, confidence, scores, findings, risks, missing_evidence, and fetch_failures. "
-                "Do not evaluate whether the score itself is correct; contract validation handles schema and ranges."
-            ),
-        )
-
         try:
+            result_raw = gl.eq_principle.prompt_non_comparative(
+                _fetch_and_review,
+                task=(
+                    "Fetch the submitted project evidence through GenLayer web access, "
+                    "then review only the bounded fetched evidence against ProofPilot rubric_v1."
+                ),
+                criteria=(
+                    "Validate format only. Accept if ALL of these are true: "
+                    "(1) valid JSON object, "
+                    "(2) contains a 'fetched' object, "
+                    "(3) fetched contains fetch_results, source_urls, evidence, and warnings, "
+                    "(4) contains raw_review_json, "
+                    "(5) raw_review_json parses as JSON, "
+                    "(6) raw_review_json contains total_score, status, recommendation, "
+                    "risk_level, confidence, scores, findings, risks, missing_evidence, and fetch_failures. "
+                    "Do not evaluate whether the score itself is correct; contract validation handles schema and ranges."
+                ),
+            )
             result = json.loads(result_raw)
             fetched = result["fetched"]
             raw_review_json = str(result["raw_review_json"])
