@@ -89,3 +89,24 @@ Fetch failures represented in the report:
 The original larger contract source failed deployment with `BlockPubdataLimitReached`. Earlier deployed versions proved campaign and submission flows, but `run_review` required several iterations before the final v6 architecture succeeded.
 
 The final v6 contract keeps the leader-side AI review over compact facts and uses validator-side deterministic consensus checks. It does not return raw HTML or README text from nondeterministic execution, does not fetch explorer HTML, does not use `gl.nondet.web.render`, and does not rerun LLM review in validators.
+
+## Public DApp Transaction Flow
+
+The public frontend uses browser wallet signing only:
+
+- Users connect an EIP-1193 wallet.
+- The server prepares GenLayer consensus calldata but does not sign.
+- The browser sends the prepared transaction to the Bradbury consensus contract through the wallet.
+- The app waits for the EVM receipt and attempts to decode the GenLayer transaction ID from consensus logs.
+- The app links both EVM and GenLayer transaction hashes when available.
+- Final success is verified through contract reads and GenLayer transaction state, not by wallet submission alone.
+
+No private keys are requested, stored, logged, or sent to the backend.
+
+Known Bradbury gas defaults:
+
+- `create_campaign`: `2,000,000`
+- `submit_project`: `5,000,000`
+- `run_review`: `7,000,000`
+
+These values are user-adjustable in the UI before wallet signing.

@@ -18,6 +18,9 @@ export function AppHeader() {
           <Link href="/dashboard" className="hover:text-white">
             Dashboard
           </Link>
+          <Link href="/campaigns" className="hover:text-white">
+            Campaigns
+          </Link>
           <Link href="/reports" className="hover:text-white">
             Reports
           </Link>

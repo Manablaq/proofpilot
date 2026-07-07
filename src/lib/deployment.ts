@@ -12,6 +12,7 @@ export const deployment = {
     "https://explorer-bradbury.genlayer.com/address/0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87",
   explorerTx:
     "https://explorer-bradbury.genlayer.com/tx/0x9a5add3f91daa277f1a09d27e0dd83ee27ec3d04c132c29c7e89e7b9d62d5877",
+  explorerBase: "https://explorer-bradbury.genlayer.com",
   liveApp: "https://proofpilot-two.vercel.app",
   githubRepo: "https://github.com/Manablaq/proofpilot",
   rpc: "https://rpc-bradbury.genlayer.com",
@@ -21,6 +22,7 @@ export const deployment = {
   campaignId: "campaign_1",
   campaignTitle: "ProofPilot Smoke Test",
   campaignStatus: "ACTIVE",
+  builderAddress: "0x1f87Ae197af539253978d435aD45cCf28Fb95024",
   submissionId: "submission_1",
   reportId: "report_1",
   snapshotId: "snapshot_1",
@@ -31,6 +33,7 @@ export const deployment = {
 
 export const navItems = [
   { label: "Dashboard", href: "/dashboard" },
+  { label: "Campaigns", href: "/campaigns" },
   { label: "Reports", href: "/reports" },
   { label: "Builders", href: "/builders" },
 ] as const;

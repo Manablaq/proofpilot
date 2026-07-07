@@ -94,7 +94,7 @@ export function DashboardPreview() {
 
   const metrics = useMemo(
     () => [
-      ["Campaigns", String(campaigns.data?.length ?? 1), liveConnected ? "Live Bradbury read" : "Static fallback"],
+      ["Campaigns", String(campaigns.data?.length ?? 1), liveConnected ? "Live Bradbury read" : "Live v6 default"],
       ["Submissions", "1", `${deployment.submissionId} live on v6`],
       ["Reviews", "1", `${deployment.reportId} scored ${deployment.reviewScore}/100`],
       ["Appeals", "0", "No appeals opened"],
@@ -127,7 +127,7 @@ export function DashboardPreview() {
               ? "Live read: loading"
               : liveConnected
                 ? "Live read: connected"
-                : "Static fallback: active"}
+                : "Live default: active"}
           </div>
           {!liveConnected && !campaigns.loading ? (
             <p className="max-w-xs text-xs text-slate-500">{campaign.error || campaigns.error}</p>
@@ -166,7 +166,7 @@ export function DashboardPreview() {
               ["Latest report", deployment.reportId],
               ["Review status", deployment.reviewStatus],
               ["Live status", "Bradbury Live"],
-              ["Campaign owner", activeCampaign.owner ?? "Static fallback"],
+              ["Campaign owner", activeCampaign.owner ?? "Live default unavailable"],
               ["Campaign index", campaigns.data?.join(", ") ?? deployment.campaignId],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">

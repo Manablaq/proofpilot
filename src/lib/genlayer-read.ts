@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "genlayer-js";
 import { testnetBradbury } from "genlayer-js/chains";
+import { TransactionStatus } from "genlayer-js/types";
 import { deployment } from "@/lib/deployment";
 
 const client = createClient({
@@ -33,4 +34,21 @@ export async function readProofPilot(functionName: string, args: ReadArg[] = [])
   });
 
   return decodeReturn(result);
+}
+
+export async function getGenLayerTransaction(hash: string) {
+  return client.getTransaction({ hash: hash as never });
+}
+
+export async function traceGenLayerTransaction(hash: string) {
+  return client.debugTraceTransaction({ hash: hash as never, round: 0 });
+}
+
+export async function waitForAcceptedTransaction(hash: string) {
+  return client.waitForTransactionReceipt({
+    hash: hash as never,
+    status: TransactionStatus.ACCEPTED,
+    interval: 3000,
+    retries: 20,
+  });
 }

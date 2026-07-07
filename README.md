@@ -94,6 +94,38 @@ ProofPilot v6 is deployed on GenLayer Bradbury Testnet.
 - First AI review report: `report_1` stored for `submission_1` with total score `61`
 - Deployment details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
+## Public dApp Usage
+
+ProofPilot now includes a public browser dApp for Bradbury:
+
+- `/campaigns`: list campaigns, open campaign detail pages, and create campaigns.
+- `/campaigns/campaign_1`: inspect the live smoke-test campaign and submit project evidence.
+- `/submissions/submission_1`: inspect the reviewed live submission and, when connected as the campaign owner, run review for eligible submissions.
+- `/reports/report_1`: inspect the first stored review report and evidence snapshot.
+- `/builders`: inspect the live builder reputation profile.
+
+Users sign write transactions with an EIP-1193 browser wallet, such as MetaMask-compatible wallets. ProofPilot never asks for private keys, never stores private keys, and does not sign transactions on the backend.
+
+## Wallet Transaction Flow
+
+For write actions, the app:
+
+1. Validates form input in the browser and again on the server preparation route.
+2. Calls `POST /api/tx/prepare` to encode GenLayer consensus calldata for the requested contract method.
+3. Sends the prepared calldata to the Bradbury consensus contract through the connected browser wallet.
+4. Lets the user approve or reject the transaction in their wallet.
+5. Waits for the EVM receipt and attempts to extract the GenLayer transaction ID from consensus logs.
+6. Links the EVM transaction and GenLayer transaction to Bradbury Explorer when available.
+7. Uses read APIs to verify final contract state. The UI does not claim contract success from wallet submission alone.
+
+Known Bradbury gas behavior:
+
+- `submit_project` defaults to a `5,000,000` gas limit override.
+- `run_review` defaults to a `7,000,000` gas limit override.
+- Users can adjust gas limits before signing if Bradbury behavior changes.
+
+To verify reports manually, read `get_report("report_1")`, `get_submission("submission_1")`, and `get_evidence_snapshot("snapshot_1")` from the deployed contract or open the report page in the dApp.
+
 ## Documentation Map
 
 - [Product Spec](docs/PRODUCT_SPEC.md): product goals, users, workflows, data models, statuses, and launch scope.

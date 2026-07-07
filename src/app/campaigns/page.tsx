@@ -1,13 +1,13 @@
 import { AppBackground } from "@/components/AppBackground";
 import { AppHeader } from "@/components/AppHeader";
+import { CampaignsApp } from "@/components/CampaignsApp";
 import { Footer } from "@/components/Footer";
-import { ReportsApp } from "@/components/ReportsApp";
 
-export default function ReportsPage() {
+export default function CampaignsPage() {
   return (
     <AppBackground>
       <AppHeader />
-      <ReportsApp />
+      <CampaignsApp />
       <Footer />
     </AppBackground>
   );
