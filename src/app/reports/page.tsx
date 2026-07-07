@@ -1,14 +1,5 @@
-import { AppBackground } from "@/components/AppBackground";
-import { AppHeader } from "@/components/AppHeader";
-import { Footer } from "@/components/Footer";
-import { ReportsApp } from "@/components/ReportsApp";
+import { redirect } from "next/navigation";
 
 export default function ReportsPage() {
-  return (
-    <AppBackground>
-      <AppHeader />
-      <ReportsApp />
-      <Footer />
-    </AppBackground>
-  );
+  redirect("/app/reports");
 }

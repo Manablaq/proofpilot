@@ -1,14 +1,5 @@
-import { AppBackground } from "@/components/AppBackground";
-import { AppHeader } from "@/components/AppHeader";
-import { BuildersApp } from "@/components/BuildersApp";
-import { Footer } from "@/components/Footer";
+import { redirect } from "next/navigation";
 
 export default function BuildersPage() {
-  return (
-    <AppBackground>
-      <AppHeader />
-      <BuildersApp />
-      <Footer />
-    </AppBackground>
-  );
+  redirect("/app/builders");
 }

@@ -29,13 +29,13 @@ export function VideoHero() {
             ProofPilot
           </Link>
           <div className="hidden items-center gap-6 text-sm text-slate-300 sm:flex">
-            <Link href="/dashboard" className="transition hover:text-white">
-              Dashboard
+            <Link href="/app" className="transition hover:text-white">
+              Launch App
             </Link>
-            <Link href="/reports" className="transition hover:text-white">
+            <Link href="/app/reports" className="transition hover:text-white">
               Reports
             </Link>
-            <Link href="/builders" className="transition hover:text-white">
+            <Link href="/app/builders" className="transition hover:text-white">
               Builders
             </Link>
           </div>
@@ -59,10 +59,10 @@ export function VideoHero() {
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Link
-                href="/dashboard"
+                href="/app"
                 className="rounded-full bg-cyan-300 px-6 py-3 text-center text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-cyan-200"
               >
-                Launch Dashboard
+                Launch App
               </Link>
               <a
                 href="#deployment"

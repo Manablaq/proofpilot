@@ -15,16 +15,16 @@ export function AppHeader() {
           </div>
         </div>
         <nav className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
-          <Link href="/dashboard" className="hover:text-white">
+          <Link href="/app" className="hover:text-white">
             Dashboard
           </Link>
-          <Link href="/campaigns" className="hover:text-white">
+          <Link href="/app/campaigns" className="hover:text-white">
             Campaigns
           </Link>
-          <Link href="/reports" className="hover:text-white">
+          <Link href="/app/reports" className="hover:text-white">
             Reports
           </Link>
-          <Link href="/builders" className="hover:text-white">
+          <Link href="/app/builders" className="hover:text-white">
             Builders
           </Link>
           <a href={deployment.explorerContract} target="_blank" rel="noreferrer" className="hover:text-white">

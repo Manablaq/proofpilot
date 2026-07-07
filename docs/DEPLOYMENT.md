@@ -94,6 +94,7 @@ The final v6 contract keeps the leader-side AI review over compact facts and use
 
 The public frontend uses browser wallet signing only:
 
+- The product app lives under `/app` with an app shell, sidebar navigation, wallet/status topbar, and live report/campaign/submission pages.
 - Users connect an EIP-1193 wallet.
 - The server prepares GenLayer consensus calldata but does not sign.
 - The browser sends the prepared transaction to the Bradbury consensus contract through the wallet.

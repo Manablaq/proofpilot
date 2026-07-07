@@ -61,6 +61,15 @@ export function TransactionStatus({
       const genlayerTx = extractGenLayerTxId(receipt) ?? "";
 
       setState({ phase: "confirmed", evmTx, genlayerTx, error: "" });
+      try {
+        const key = "proofpilot_tx_history";
+        const current = JSON.parse(window.localStorage.getItem(key) || "[]") as unknown[];
+        window.localStorage.setItem(key, JSON.stringify([
+          { method, evmTx, genlayerTx, createdAt: new Date().toISOString() },
+          ...current,
+        ].slice(0, 25)));
+      } catch {
+      }
       onConfirmed?.({ evmTx, genlayerTx });
     } catch (error) {
       setState((prev) => ({

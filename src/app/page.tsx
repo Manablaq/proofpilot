@@ -81,6 +81,28 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="px-6 py-24 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading
+            eyebrow="Roles"
+            title="A review layer for every participant."
+            description="ProofPilot separates program operations, builder submissions, and public verification into clear product surfaces."
+          />
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            {[
+              ["Program owner", "Create campaigns, inspect submissions, and run reviews from the owner wallet."],
+              ["Builder", "Submit live app, repository, docs, contract, transaction proof, and fix explanations."],
+              ["Reviewer / auditor", "Verify report scores, evidence health, fetch failures, and immutable Bradbury anchors."],
+            ].map(([role, text]) => (
+              <GlassCard key={role} className="p-6">
+                <h3 className="text-xl font-semibold text-white">{role}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">{text}</p>
+              </GlassCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="deployment" className="px-6 py-24 sm:px-8 lg:px-10">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
@@ -106,14 +128,14 @@ export default function Home() {
             Start reviewing builder submissions with AI consensus.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Launch the dashboard preview, inspect public report surfaces, and prepare
-            campaigns for live on-chain review workflows.
+            Launch the app workspace, inspect public reports, and prepare campaigns for
+            wallet-signed on-chain review workflows.
           </p>
           <a
-            href="/dashboard"
+            href="/app"
             className="mt-9 inline-flex rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
           >
-            Launch Dashboard
+            Launch App
           </a>
         </div>
       </section>

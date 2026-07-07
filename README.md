@@ -98,11 +98,15 @@ ProofPilot v6 is deployed on GenLayer Bradbury Testnet.
 
 ProofPilot now includes a public browser dApp for Bradbury:
 
-- `/campaigns`: list campaigns, open campaign detail pages, and create campaigns.
-- `/campaigns/campaign_1`: inspect the live smoke-test campaign and submit project evidence.
-- `/submissions/submission_1`: inspect the reviewed live submission and, when connected as the campaign owner, run review for eligible submissions.
-- `/reports/report_1`: inspect the first stored review report and evidence snapshot.
-- `/builders`: inspect the live builder reputation profile.
+- `/app`: product workspace overview.
+- `/app/campaigns`: list campaigns and open campaign detail pages.
+- `/app/campaigns/new`: create a campaign with wallet signing.
+- `/app/campaigns/campaign_1`: inspect the live campaign and its submissions/reports.
+- `/app/submit`: submit project evidence as a builder.
+- `/app/submissions/submission_1`: inspect the reviewed live submission and owner-only review actions when eligible.
+- `/app/reports/report_1`: inspect the first stored review report and evidence snapshot.
+- `/app/builders`: inspect builder reputation profiles.
+- Legacy routes such as `/dashboard`, `/campaigns`, `/reports`, and `/builders` redirect into the `/app` shell.
 
 Users sign write transactions with an EIP-1193 browser wallet, such as MetaMask-compatible wallets. ProofPilot never asks for private keys, never stores private keys, and does not sign transactions on the backend.
 
