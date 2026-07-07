@@ -84,6 +84,13 @@ ProofPilot documentation assumes these GenLayer-specific constraints:
 - Review output must be strict JSON.
 - Fetch failures must be handled gracefully and scored conservatively.
 
+## Bradbury Deployment
+
+ProofPilot v1 is deployed on GenLayer Bradbury Testnet.
+
+- Contract address: `0xEd6B2fa740D0e8130CB8b767E7084fC7257729e3`
+- Deployment details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
 ## Documentation Map
 
 - [Product Spec](docs/PRODUCT_SPEC.md): product goals, users, workflows, data models, statuses, and launch scope.
