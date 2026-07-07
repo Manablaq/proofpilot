@@ -23,6 +23,16 @@
 - Transaction execution result: `1`
 - Validators agreed: `5/5`
 
+## Live Smoke Test
+
+- Test status: passed
+- `create_campaign` transaction hash: `0xcf2caa40864850fe62ff6050b484db9f39166c186f42923e321f3c411f4576cf`
+- Campaign ID: `campaign_1`
+- `get_campaign("campaign_1")` result summary: returned the expected campaign JSON for `ProofPilot Smoke Test`, owned by `0x1f87Ae197af539253978d435aD45cCf28Fb95024`.
+- `list_campaigns(0, 10)` result summary: returned `["campaign_1"]`.
+- Validators agreed: `5/5`
+- This confirms the deployed contract can write state and read state on Bradbury.
+
 ## Deployment Notes
 
 The original larger contract source failed deployment with `BlockPubdataLimitReached`. This successful Bradbury deployment uses the slim v1 contract from `contracts/proofpilot.py`.
