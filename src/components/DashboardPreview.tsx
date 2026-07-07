@@ -95,10 +95,10 @@ export function DashboardPreview() {
   const metrics = useMemo(
     () => [
       ["Campaigns", String(campaigns.data?.length ?? 1), liveConnected ? "Live Bradbury read" : "Static fallback"],
-      ["Submissions", "0", "No builder submissions integrated yet"],
-      ["Reviews", "0", "AI report reads are next"],
+      ["Submissions", "1", `${deployment.submissionId} live on v6`],
+      ["Reviews", "1", `${deployment.reportId} scored ${deployment.reviewScore}/100`],
       ["Appeals", "0", "No appeals opened"],
-      ["Builder Profiles", "0", "Profiles populate after reviews"],
+      ["Builder Profiles", "1", "Profile updated after first review"],
     ],
     [campaigns.data?.length, liveConnected],
   );
@@ -163,6 +163,8 @@ export function DashboardPreview() {
               ["Campaign ID", activeCampaign.campaign_id ?? deployment.campaignId],
               ["Network", deployment.network],
               ["Validator agreement", deployment.validatorAgreement],
+              ["Latest report", deployment.reportId],
+              ["Review status", deployment.reviewStatus],
               ["Live status", "Bradbury Live"],
               ["Campaign owner", activeCampaign.owner ?? "Static fallback"],
               ["Campaign index", campaigns.data?.join(", ") ?? deployment.campaignId],

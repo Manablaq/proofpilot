@@ -11,6 +11,7 @@ export function DeploymentCard() {
     ["Contract", deployment.contractAddress],
     ["Deployment tx", deployment.deploymentTx],
     ["Smoke test tx", deployment.smokeTestTx],
+    ["Run review tx", deployment.runReviewTx],
     ["Validators", deployment.validatorAgreement],
   ];
 

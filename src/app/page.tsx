@@ -88,11 +88,12 @@ export default function Home() {
               Live on Bradbury
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-5xl">
-              Deployed, smoke-tested, and ready for contract integration.
+              Deployed, reviewed, and ready for live contract reads.
             </h2>
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              The deployed ProofPilot v1 contract has already written and read state on
-              GenLayer Bradbury, with 5/5 validator agreement during the live smoke test.
+              The deployed ProofPilot v6 contract has created a campaign, accepted a
+              submission, and stored its first on-chain AI review report on GenLayer
+              Bradbury with 5/5 validator agreement.
             </p>
           </div>
           <DeploymentCard />

@@ -35,11 +35,11 @@ ProofPilot is designed as a flagship GenLayer application, not a minimal demo. T
 
 1. A program owner creates a campaign with a rubric and review settings.
 2. A builder submits project evidence.
-3. The contract fetches evidence using GenLayer web access functions such as `gl.nondet.web.get` or `gl.nondet.web.render`.
-4. Web access is executed through an equivalence principle flow such as `gl.eq_principle.strict_eq`.
-5. The contract treats fetched content as untrusted evidence and evaluates it with prompt-injection defenses.
-6. Validators produce a strict JSON review report.
-7. The report is stored publicly and linked to the campaign, submission, and builder profile.
+3. The contract fetches compact evidence facts using GenLayer web access, currently `gl.nondet.web.get`.
+4. Leader-side AI review scores the compact facts while prompt-injection defenses treat fetched content as untrusted.
+5. Validator-side deterministic consensus checks independently verify compact facts, score rules, failed evidence representation, and report structure.
+6. The strict JSON review report is stored publicly and linked to the campaign, submission, and builder profile.
+7. Unsupported or unfetched evidence, such as metadata-only contract and transaction proof in v6, is scored conservatively.
 8. The builder may request a re-check or appeal if fixes are made or evidence changes.
 9. A human reviewer may optionally record a final decision.
 
@@ -77,8 +77,8 @@ Recommendations:
 ProofPilot documentation assumes these GenLayer-specific constraints:
 
 - Raw URLs must not be placed into LLM prompts with the expectation that validators will browse them.
-- Contract web access must use GenLayer web access functions such as `gl.nondet.web.get` or `gl.nondet.web.render`.
-- Web access must be called through the equivalence principle flow, such as `gl.eq_principle.strict_eq`.
+- Contract web access must use GenLayer web access functions. The live v6 review path uses `gl.nondet.web.get` and does not use `gl.nondet.web.render`.
+- The live v6 review path uses leader-side AI review with validator-side deterministic consensus checks through `gl.vm.run_nondet_unsafe`.
 - Fetched web content must be treated as untrusted evidence.
 - Review prompts must defend against prompt injection from fetched webpages, README files, docs, and app pages.
 - Review output must be strict JSON.
@@ -86,11 +86,12 @@ ProofPilot documentation assumes these GenLayer-specific constraints:
 
 ## Bradbury Deployment
 
-ProofPilot v1 is deployed on GenLayer Bradbury Testnet.
+ProofPilot v6 is deployed on GenLayer Bradbury Testnet.
 
-- Contract address: `0xEd6B2fa740D0e8130CB8b767E7084fC7257729e3`
+- Contract address: `0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87`
 - Live app: https://proofpilot-two.vercel.app
 - Live smoke test: passed
+- First AI review report: `report_1` stored for `submission_1` with total score `61`
 - Deployment details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Documentation Map
@@ -102,4 +103,4 @@ ProofPilot v1 is deployed on GenLayer Bradbury Testnet.
 
 ## Current Repository Status
 
-This repository currently contains documentation and architecture planning only. Frontend implementation and contract implementation are intentionally out of scope for this phase.
+This repository contains the deployed ProofPilot contract source, protocol documentation, and a read-only frontend preview for the Bradbury deployment.

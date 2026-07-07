@@ -137,3 +137,61 @@ The v5 patch follows the GenLayer guidance for consensus review decisions:
 - Deterministic storage then creates the evidence snapshot and review report from compact facts and the validated compact review.
 
 This keeps consensus output small and makes validation about independently derived review decisions rather than schema-only acceptance.
+
+## V5 Validator Timeout
+
+ProofPilot v5 fixed the large-output failure mode. The `run_review` leader reached output and returned compact facts plus a compact review instead of raw HTML or README text.
+
+The transaction still ended as a timeout:
+
+- Receipt status was `LEADER_TIMEOUT`.
+- Result was `IDLE`.
+- Execution result was `FINISHED_WITH_RETURN`.
+- Validator votes were `NOT_VOTED 5/5`.
+- Equivalence output contained compact facts and review data, not a huge fetched evidence payload.
+
+The remaining issue was validator workload. The v5 validator independently derived facts and reran `pp_ai` / LLM review inside validators. That made validator execution too slow or too expensive for the live Bradbury review path.
+
+## V6 Fix
+
+The v6 patch keeps the v5 compact evidence architecture and removes validator-side LLM review:
+
+- The leader still performs AI review over compact facts.
+- The leader applies deterministic score, status, recommendation, risk, and confidence rules based on compact facts.
+- The validator independently derives compact facts.
+- The validator does not call `pp_ai` or `gl.nondet.exec_prompt`.
+- The validator compares stable facts and verifies deterministic score/status/recommendation/risk/confidence outcomes.
+- The validator verifies failed or unsupported evidence is represented in `missing_evidence` or `fetch_failures`.
+- Contract address and deployment transaction remain metadata-only proof in v6 and receive zero proof points when explorer evidence is unsupported.
+
+This preserves leader-side AI review while making validator-side consensus timeout-safe and deterministic.
+
+## Resolved V6 Outcome
+
+Final live Bradbury v6 contract:
+
+`0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87`
+
+Final live review transaction:
+
+`0x03dce7d374e767e4a99b9b8b6da51e5a704aa8ba402c96081723f32a882ab1f8`
+
+The v6 `run_review` transaction was accepted with `AGREE 5/5` and stored:
+
+- Campaign: `campaign_1`
+- Submission: `submission_1`
+- Evidence snapshot: `snapshot_1`
+- Review report: `report_1`
+
+Final read state:
+
+- Submission status: `REVIEWED`
+- Latest report ID: `report_1`
+- Review count: `1`
+- Total score: `61`
+- Review status: `NEEDS_MINOR_FIXES`
+- Recommendation: `REQUEST_MINOR_CHANGES`
+- Risk level: `MEDIUM`
+- Confidence: `HIGH`
+
+The final architecture is leader-side AI review with validator-side deterministic consensus checks.
