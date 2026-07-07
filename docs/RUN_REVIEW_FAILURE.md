@@ -68,3 +68,37 @@ The v3 patch keeps the v2 storage-isolation fix and reduces the live review work
 - Empty or non-string equivalence output is rejected with `review nondet output` before JSON parsing.
 
 This is intended to keep enough evidence for review while reducing timeout risk and avoiding opaque JSON decode failures.
+
+## V3 Malformed Equivalence Output
+
+ProofPilot v3 deployed successfully and reduced the evidence path, but the first `run_review` attempt still failed:
+
+`0x2575865bc2cee3033f1d4e44115198c5d99f3ab3dcee5899daa6f93f16896710`
+
+Observed state after failure:
+
+- `submission_1` remained `SUBMITTED`.
+- `get_latest_report("submission_1")` returned `{"error":"No report yet"}`.
+- `list_reports` returned `[]`.
+- Receipt status was `LEADER_TIMEOUT`.
+- Result was `IDLE`.
+- Execution result was `FINISHED_WITH_ERROR`.
+- Validator votes were `NOT_VOTED 5/5`.
+- Trace stderr showed `json.loads(out)` failed with an unterminated string error.
+
+The equivalence output included a large JSON/code-fenced JSON-like payload with fetched evidence. This indicates v3 still returned too much data from nondeterministic execution and could produce malformed or truncated equivalence output.
+
+## V4 Fix
+
+The v4 patch changes `run_review` to a review-lite evidence path:
+
+- Explorer contract and transaction pages are not fetched.
+- Contract address and deployment transaction are included as compact submitted metadata and marked `UNSUPPORTED_URL`.
+- Live app evidence uses `gl.nondet.web.get` only and is capped to a small snippet.
+- GitHub and docs evidence use normalized raw README URLs when possible.
+- If GitHub and docs normalize to the same URL, the README is fetched once and reused for docs evidence.
+- The prompt is shorter while retaining prompt-injection defenses, strict JSON requirements, rubric constraints, and conservative scoring rules.
+- The nondeterministic leader returns compact evidence and the AI review object, avoiding a double-encoded raw review string.
+- Deterministic parsing accepts plain JSON or fenced ```json blocks and raises `review nondet output` for empty or malformed equivalence output.
+
+This reduces timeout and truncation risk while preserving meaningful report validation.
