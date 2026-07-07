@@ -1,9 +1,7 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { deployment } from "@/lib/deployment";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { StatusBadge } from "@/components/app/StatusBadge";
@@ -53,11 +51,9 @@ const templates = [
   },
 ] as const;
 
-export function AppSubmitProject() {
-  const search = useSearchParams();
+export function AppSubmitProject({ campaignId }: { campaignId: string }) {
   const [address, setAddress] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<(typeof templates)[number]["id"]>("web3");
-  const campaignId = search.get("campaignId") || deployment.campaignId;
   const selected = templates.find((template) => template.id === selectedTemplate) ?? templates[0];
 
   return (
