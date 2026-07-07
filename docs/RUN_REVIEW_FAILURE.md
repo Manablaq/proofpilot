@@ -102,3 +102,38 @@ The v4 patch changes `run_review` to a review-lite evidence path:
 - Deterministic parsing accepts plain JSON or fenced ```json blocks and raises `review nondet output` for empty or malformed equivalence output.
 
 This reduces timeout and truncation risk while preserving meaningful report validation.
+
+## V4 Timeout
+
+ProofPilot v4 deployed successfully and kept the review-lite evidence path, but the first `run_review` attempt still failed:
+
+`0xfc533b84fac026b348a99ad2733178fdd7443891cd1dba20d2131c225010c8f3`
+
+Observed state after failure:
+
+- `submission_1` remained `SUBMITTED`.
+- `get_latest_report("submission_1")` returned `{"error":"No report yet"}`.
+- `list_reports` returned `[]`.
+- Receipt status was `LEADER_TIMEOUT`.
+- Result was `IDLE`.
+- Execution result was `FINISHED_WITH_ERROR`.
+- Validator votes were `NOT_VOTED 5/5`.
+- Equivalence output still contained a large fetched evidence payload.
+
+The root issue was architectural: even bounded text snippets can make equivalence output too large when raw evidence is returned from nondeterministic execution. For review/scoring decisions, non-comparative validation is also not the correct consensus pattern.
+
+## V5 Fix
+
+The v5 patch follows the GenLayer guidance for consensus review decisions:
+
+- Raw HTML and raw README text are not returned from nondeterministic execution.
+- Web access derives compact facts only, such as reachability, keyword mentions, format checks, fetch failures, and warnings.
+- Explorer pages are not fetched.
+- `gl.nondet.web.render` is not used.
+- `run_review` no longer uses `prompt_non_comparative`.
+- `run_review` uses `gl.vm.run_nondet_unsafe` with a custom validator.
+- The leader derives compact facts, runs the AI review over those facts, validates the compact review, and returns only `{"facts": ..., "review": ...}`.
+- The validator independently derives facts, reruns the review prompt, validates the validator review, and compares decision fields, score tolerances, proof buckets, and failure representation.
+- Deterministic storage then creates the evidence snapshot and review report from compact facts and the validated compact review.
+
+This keeps consensus output small and makes validation about independently derived review decisions rather than schema-only acceptance.
