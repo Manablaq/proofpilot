@@ -7,26 +7,32 @@ import { shortHash } from "@/lib/proofpilot-schema";
 
 type WalletPanelProps = {
   onAddress?: (address: string) => void;
+  variant?: "compact" | "full";
 };
 
-export function WalletPanel({ onAddress }: WalletPanelProps) {
+const disconnectKey = "proofpilot_wallet_disconnected";
+
+export function WalletPanel({ onAddress, variant = "full" }: WalletPanelProps) {
   const [address, setAddress] = useState("");
   const [chainId, setChainId] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [locallyDisconnected, setLocallyDisconnected] = useState(false);
 
-  async function refresh() {
+  async function refresh(ignoreLocalDisconnect = false) {
     const provider = getProvider();
     if (!provider) {
       setError("No browser wallet detected.");
       return;
     }
 
+    const disconnected = window.localStorage.getItem(disconnectKey) === "1";
+    setLocallyDisconnected(disconnected);
     const [accounts, currentChainId] = await Promise.all([
       provider.request<string[]>({ method: "eth_accounts" }),
       getWalletChainId(),
     ]);
-    const nextAddress = accounts[0] ?? "";
+    const nextAddress = disconnected && !ignoreLocalDisconnect ? "" : accounts[0] ?? "";
     setAddress(nextAddress);
     setChainId(currentChainId);
     onAddress?.(nextAddress);
@@ -34,13 +40,106 @@ export function WalletPanel({ onAddress }: WalletPanelProps) {
 
   useEffect(() => {
     refresh().catch(() => undefined);
-  }, []);
+    const provider = getProvider();
+    if (!provider?.on) {
+      return;
+    }
+    const onAccountsChanged = (accounts: unknown) => {
+      if (window.localStorage.getItem(disconnectKey) === "1") {
+        setAddress("");
+        onAddress?.("");
+        return;
+      }
+      const next = Array.isArray(accounts) && typeof accounts[0] === "string" ? accounts[0] : "";
+      setAddress(next);
+      onAddress?.(next);
+    };
+    const onChainChanged = (nextChainId: unknown) => {
+      if (typeof nextChainId === "string") {
+        setChainId(nextChainId);
+      }
+    };
+    provider.on("accountsChanged", onAccountsChanged);
+    provider.on("chainChanged", onChainChanged);
+    return () => {
+      provider.removeListener?.("accountsChanged", onAccountsChanged);
+      provider.removeListener?.("chainChanged", onChainChanged);
+    };
+  }, [onAddress]);
 
   const expectedChain = `0x${testnetBradbury.id.toString(16)}`;
   const wrongNetwork = Boolean(chainId && chainId !== expectedChain);
+  const connect = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      window.localStorage.removeItem(disconnectKey);
+      setLocallyDisconnected(false);
+      const next = await connectWallet();
+      setAddress(next);
+      onAddress?.(next);
+      await refresh(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Wallet connection failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const disconnect = () => {
+    window.localStorage.setItem(disconnectKey, "1");
+    setLocallyDisconnected(true);
+    setAddress("");
+    onAddress?.("");
+  };
+  const switchNetwork = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await ensureBradburyNetwork();
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network switch failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (variant === "compact") {
+    return (
+      <div className="flex min-w-0 items-center justify-end gap-2">
+        <span className={`hidden rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-flex ${wrongNetwork ? "border-amber-300/30 bg-amber-300/10 text-amber-100" : "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"}`}>
+          {chainId ? wrongNetwork ? "Wrong network" : "Bradbury" : "Bradbury required"}
+        </span>
+        {address ? (
+          <>
+            <span className="min-w-0 truncate rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-100">
+              {shortHash(address)}
+            </span>
+            <button
+              type="button"
+              onClick={disconnect}
+              className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+            >
+              Disconnect
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={connect}
+            className="rounded-full bg-cyan-300 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-60"
+          >
+            Connect wallet
+          </button>
+        )}
+        {error ? <span className="hidden max-w-[220px] truncate text-xs text-amber-200 md:inline">{error}</span> : null}
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+    <div className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-cyan-200">Wallet</p>
@@ -52,39 +151,15 @@ export function WalletPanel({ onAddress }: WalletPanelProps) {
           <button
             type="button"
             disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError("");
-              try {
-                const next = await connectWallet();
-                setAddress(next);
-                onAddress?.(next);
-                await refresh();
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Wallet connection failed");
-              } finally {
-                setBusy(false);
-              }
-            }}
+            onClick={address ? disconnect : connect}
             className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-60"
           >
-            {address ? "Reconnect" : "Connect wallet"}
+            {address ? "Disconnect" : "Connect wallet"}
           </button>
           <button
             type="button"
             disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError("");
-              try {
-                await ensureBradburyNetwork();
-                await refresh();
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Network switch failed");
-              } finally {
-                setBusy(false);
-              }
-            }}
+            onClick={switchNetwork}
             className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
           >
             Switch to Bradbury
@@ -95,10 +170,13 @@ export function WalletPanel({ onAddress }: WalletPanelProps) {
         <span className={`rounded-full border px-3 py-1 ${wrongNetwork ? "border-amber-300/30 bg-amber-300/10 text-amber-100" : "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"}`}>
           {chainId ? wrongNetwork ? `Wrong network ${chainId}` : "Bradbury network" : "Network unknown"}
         </span>
-        <span className="rounded-full border border-white/10 px-3 py-1 text-slate-300">
+        <span className="rounded-full border border-white/10 px-3 py-1 text-slate-500">
           No private keys required
         </span>
       </div>
+      {locallyDisconnected ? (
+        <p className="mt-3 text-xs text-slate-500">Disconnected in ProofPilot. Manage account permissions in your wallet.</p>
+      ) : null}
       {error ? <p className="mt-3 text-sm text-amber-200">{error}</p> : null}
     </div>
   );

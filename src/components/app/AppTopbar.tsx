@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/app/StatusBadge";
 
 export function AppTopbar({ onMenu }: { onMenu: () => void }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/72 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/72 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
       <div className="flex items-center justify-between gap-4">
         <button
           type="button"
@@ -20,8 +20,8 @@ export function AppTopbar({ onMenu }: { onMenu: () => void }) {
           <StatusBadge tone="success">Bradbury live</StatusBadge>
           <StatusBadge tone="info">{shortHash(deployment.contractAddress)}</StatusBadge>
         </div>
-        <div className="min-w-0 flex-1 lg:max-w-xl">
-          <WalletPanel />
+        <div className="min-w-0 flex-1">
+          <WalletPanel variant="compact" />
         </div>
       </div>
     </header>

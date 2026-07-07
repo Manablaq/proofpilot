@@ -110,6 +110,22 @@ ProofPilot now includes a public browser dApp for Bradbury:
 
 Users sign write transactions with an EIP-1193 browser wallet, such as MetaMask-compatible wallets. ProofPilot never asks for private keys, never stores private keys, and does not sign transactions on the backend.
 
+## Submission Templates
+
+The public app includes a professional template picker for builder submissions:
+
+- `Web3 Project`: active on the current v6 contract. This template maps directly to `submit_project` with live app URL, GitHub repo URL, docs URL, deployed contract address, deployment transaction hash, reviewer feedback, and fixes explanation.
+- `Frontend App`: visible as a locked preview. It requires future flexible evidence support because v6 requires contract address and deployment transaction fields.
+- `AI Project`: visible as a locked preview. It requires future flexible evidence support for model/API docs, benchmarks, and evaluation notes.
+- `DAO Milestone`: visible as a locked preview. It requires future flexible evidence support for milestone docs, PR links, and deliverables checklists.
+- `Bug Bounty`: visible as a locked preview. It requires future flexible evidence support for reproduction steps, fix PRs, and verification notes.
+
+Locked templates do not show a submit button and do not ask users to enter fake Web3 proof fields. The current v6 contract accepts Web3 evidence only.
+
+## Wallet UX
+
+ProofPilot uses browser wallet permissions. The app supports a local disconnect action that hides the connected account inside ProofPilot and stops auto-displaying it until the user clicks Connect again. Wallet account permissions are still controlled by the wallet itself.
+
 ## Wallet Transaction Flow
 
 For write actions, the app:

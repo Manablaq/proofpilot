@@ -104,6 +104,33 @@ The public frontend uses browser wallet signing only:
 
 No private keys are requested, stored, logged, or sent to the backend.
 
+## Submission Templates
+
+The current deployed v6 contract supports the active `Web3 Project` submission template. It maps directly to the fixed `submit_project` evidence shape:
+
+- Project name
+- Summary
+- Live app URL
+- GitHub repo URL
+- Docs / README URL
+- Contract address
+- Deployment transaction hash
+- Reviewer feedback
+- Fixes explanation
+
+Additional templates are visible in the app as locked previews:
+
+- `Frontend App`
+- `AI Project`
+- `DAO Milestone`
+- `Bug Bounty`
+
+These require future flexible evidence support. The v6 UI must not ask users to enter fake contract addresses or fake deployment transaction hashes for non-Web3 submissions.
+
+## Wallet Disconnect Behavior
+
+Browser wallets control account permissions. ProofPilot's Disconnect action is a local UI disconnect: it hides the account in ProofPilot and stores a local flag so the app does not auto-display the wallet account again until the user clicks Connect. Users can revoke site permissions directly inside their wallet.
+
 Known Bradbury gas defaults:
 
 - `create_campaign`: `2,000,000`
