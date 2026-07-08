@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { deployment } from "@/lib/deployment";
 import { canonicalAddress, sameAddress } from "@/lib/address";
+import { subscribeProofPilotMutation, type ProofPilotMutationPayload } from "@/lib/live-refresh";
 import type { BuilderProfile, Campaign, ReviewReport, Submission } from "@/lib/proofpilot-schema";
 import { parseJsonField, shortHash } from "@/lib/proofpilot-schema";
 import { getLocalTxHistory, type LocalTxEntry } from "@/lib/tx-history";
@@ -60,8 +61,55 @@ export function AppMyWorkspace() {
     localTxs: [],
   });
   const [reloadNonce, setReloadNonce] = useState(0);
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const reloadTimer = useRef<number | null>(null);
 
   const reload = useCallback(() => setReloadNonce((value) => value + 1), []);
+  const scheduleReload = useCallback((reason = "auto") => {
+    if (reloadTimer.current) {
+      window.clearTimeout(reloadTimer.current);
+    }
+    if (reason !== "manual") {
+      setAutoSyncing(true);
+    }
+    reloadTimer.current = window.setTimeout(() => {
+      setReloadNonce((value) => value + 1);
+    }, 650);
+  }, []);
+
+  useEffect(() => () => {
+    if (reloadTimer.current) {
+      window.clearTimeout(reloadTimer.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!walletReadAddress) {
+      return;
+    }
+
+    const onMutation = (payload: ProofPilotMutationPayload) => {
+      const actor = payload.from || payload.address;
+      if (!actor || sameAddress(actor, walletReadAddress)) {
+        scheduleReload("mutation");
+      }
+    };
+    const onFocus = () => scheduleReload("focus");
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        scheduleReload("visibility");
+      }
+    };
+
+    const unsubscribe = subscribeProofPilotMutation(onMutation);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [scheduleReload, walletReadAddress]);
 
   useEffect(() => {
     if (!walletReadAddress) {
@@ -112,6 +160,7 @@ export function AppMyWorkspace() {
           reports,
           localTxs: getLocalTxHistory(walletReadAddress),
         });
+        setAutoSyncing(false);
       } catch (error) {
         if (active) {
           setState((current) => ({
@@ -120,6 +169,7 @@ export function AppMyWorkspace() {
             error: error instanceof Error ? error.message : "Workspace reads unavailable",
             localTxs: getLocalTxHistory(walletReadAddress),
           }));
+          setAutoSyncing(false);
         }
       }
     }
@@ -205,7 +255,7 @@ export function AppMyWorkspace() {
         description="Your submissions, reports, campaigns, and wallet activity on ProofPilot."
         actions={
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={reload} className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
+            <button type="button" onClick={() => { setAutoSyncing(false); reload(); }} className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
               Refresh
             </button>
             <Link href="/app/submit" className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200">
@@ -229,7 +279,7 @@ export function AppMyWorkspace() {
           <WalletPanel variant="compact" />
         </div>
         <p className="mt-4 text-xs text-slate-500">
-          {state.loading ? "Refreshing Bradbury live reads..." : state.refreshedAt ? `Last refreshed ${new Date(state.refreshedAt).toLocaleString()}` : "Bradbury live reads load when the wallet connects."}
+          {autoSyncing || state.loading ? "Syncing latest Bradbury state..." : state.refreshedAt ? `Last refreshed ${new Date(state.refreshedAt).toLocaleString()}` : "Bradbury live reads load when the wallet connects."}
         </p>
       </SectionCard>
 

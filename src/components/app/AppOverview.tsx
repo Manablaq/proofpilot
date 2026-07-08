@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { deployment } from "@/lib/deployment";
+import { subscribeProofPilotMutation } from "@/lib/live-refresh";
 import type { BuilderProfile, ReviewReport, Submission } from "@/lib/proofpilot-schema";
 import { parseJsonField, shortHash } from "@/lib/proofpilot-schema";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -23,6 +24,7 @@ type State = {
 };
 
 export function AppOverview() {
+  const reloadTimer = useRef<number | null>(null);
   const [state, setState] = useState<State>({
     loading: true,
     error: "",
@@ -32,39 +34,72 @@ export function AppOverview() {
     profile: null,
   });
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [campaignsRes, submissionRes, reportRes, profileRes] = await Promise.all([
-          fetch("/api/campaigns", { cache: "no-store" }),
-          fetch(`/api/submissions/${deployment.submissionId}`, { cache: "no-store" }),
-          fetch(`/api/reports/${deployment.reportId}`, { cache: "no-store" }),
-          fetch(`/api/builders/${deployment.builderAddress}`, { cache: "no-store" }),
-        ]);
-        const [campaignsJson, submissionJson, reportJson, profileJson] = await Promise.all([
-          campaignsRes.json(),
-          submissionRes.json(),
-          reportRes.json(),
-          profileRes.json(),
-        ]);
-        setState({
-          loading: false,
-          error: "",
-          campaigns: Array.isArray(campaignsJson.data) ? campaignsJson.data : [],
-          submission: submissionJson.ok ? submissionJson.data : null,
-          report: reportJson.ok ? reportJson.data : null,
-          profile: profileJson.ok ? profileJson.data : null,
-        });
-      } catch (error) {
-        setState((current) => ({
-          ...current,
-          loading: false,
-          error: error instanceof Error ? error.message : "Live reads unavailable",
-        }));
-      }
+  const load = useCallback(async (initial = false) => {
+    if (initial) {
+      setState((current) => ({ ...current, loading: true }));
     }
-    load();
+    try {
+      const [campaignsRes, submissionRes, reportRes, profileRes] = await Promise.all([
+        fetch("/api/campaigns", { cache: "no-store" }),
+        fetch(`/api/submissions/${deployment.submissionId}`, { cache: "no-store" }),
+        fetch(`/api/reports/${deployment.reportId}`, { cache: "no-store" }),
+        fetch(`/api/builders/${deployment.builderAddress}`, { cache: "no-store" }),
+      ]);
+      const [campaignsJson, submissionJson, reportJson, profileJson] = await Promise.all([
+        campaignsRes.json(),
+        submissionRes.json(),
+        reportRes.json(),
+        profileRes.json(),
+      ]);
+      setState({
+        loading: false,
+        error: "",
+        campaigns: Array.isArray(campaignsJson.data) ? campaignsJson.data : [],
+        submission: submissionJson.ok ? submissionJson.data : null,
+        report: reportJson.ok ? reportJson.data : null,
+        profile: profileJson.ok ? profileJson.data : null,
+      });
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error ? error.message : "Live reads unavailable",
+      }));
+    }
   }, []);
+
+  const scheduleReload = useCallback(() => {
+    if (reloadTimer.current) {
+      window.clearTimeout(reloadTimer.current);
+    }
+    reloadTimer.current = window.setTimeout(() => {
+      load(false);
+    }, 800);
+  }, [load]);
+
+  useEffect(() => {
+    load(true);
+  }, [load]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeProofPilotMutation(() => scheduleReload());
+    const onFocus = () => scheduleReload();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        scheduleReload();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (reloadTimer.current) {
+        window.clearTimeout(reloadTimer.current);
+      }
+    };
+  }, [scheduleReload]);
 
   const scoreItems = useMemo(() => parseJsonField<Record<string, number>>(state.report?.scores_json, {}), [state.report]);
   const prettyValue = (value: string) => value.replaceAll("_", " ");
