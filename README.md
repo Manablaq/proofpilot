@@ -94,6 +94,30 @@ ProofPilot v6 is deployed on GenLayer Bradbury Testnet.
 - First AI review report: `report_1` stored for `submission_1` with total score `61`
 - Deployment details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
+## Product Screenshots
+
+ProofPilot includes a polished public dApp for campaign owners, builders, reviewers, and public auditors.
+
+### Operations Console
+
+![Operations Console](docs/assets/proofpilot-overview.png)
+
+### Submit Project Evidence
+
+![Submit Project Evidence](docs/assets/proofpilot-submit.png)
+
+### AI Consensus Report Certificate
+
+![AI Consensus Report Certificate](docs/assets/proofpilot-report.png)
+
+### Connected Wallet Workspace
+
+![Connected Wallet Workspace](docs/assets/proofpilot-workspace.png)
+
+### Campaign Workspaces
+
+![Campaign Workspaces](docs/assets/proofpilot-campaigns.png)
+
 ## Public dApp Usage
 
 ProofPilot now includes a public browser dApp for Bradbury:
