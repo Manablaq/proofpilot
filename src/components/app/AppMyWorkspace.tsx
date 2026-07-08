@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { deployment } from "@/lib/deployment";
 import type { BuilderProfile, Campaign, ReviewReport, Submission } from "@/lib/proofpilot-schema";
@@ -19,6 +19,7 @@ import { LoadingState } from "@/components/app/LoadingState";
 type WorkspaceState = {
   loading: boolean;
   error: string;
+  refreshedAt: string;
   profile: BuilderProfile | null;
   campaignsOwned: Campaign[];
   submissions: Submission[];
@@ -35,17 +36,30 @@ async function readApi<T>(url: string) {
   return json.data as T;
 }
 
+function normalizeIds(value: unknown, key: string) {
+  if (!Array.isArray(value)) {
+    return [] as string[];
+  }
+  return value
+    .map((item) => typeof item === "string" ? item : typeof item === "object" && item && key in item ? String((item as Record<string, unknown>)[key] ?? "") : "")
+    .filter(Boolean);
+}
+
 export function AppMyWorkspace() {
   const wallet = useWallet();
   const [state, setState] = useState<WorkspaceState>({
     loading: false,
     error: "",
+    refreshedAt: "",
     profile: null,
     campaignsOwned: [],
     submissions: [],
     reports: [],
     localTxs: [],
   });
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const reload = useCallback(() => setReloadNonce((value) => value + 1), []);
 
   useEffect(() => {
     if (!wallet.address) {
@@ -58,11 +72,13 @@ export function AppMyWorkspace() {
     async function loadWorkspace() {
       setState((current) => ({ ...current, loading: true, error: "", localTxs: getLocalTxHistory(wallet.address) }));
       try {
-        const [profileResult, campaignIds, submissionIds] = await Promise.all([
+        const [profileResult, campaignListRaw, submissionListRaw] = await Promise.all([
           readApi<BuilderProfile>(`/api/builders/${encodeURIComponent(wallet.address)}`).catch(() => null),
-          readApi<string[]>("/api/campaigns").catch(() => []),
-          readApi<string[]>(`/api/submissions?builder=${encodeURIComponent(wallet.address)}&offset=0&limit=50`).catch(() => []),
+          readApi<unknown>("/api/campaigns").catch(() => []),
+          readApi<unknown>(`/api/submissions?builder=${encodeURIComponent(wallet.address)}&offset=0&limit=50`).catch(() => []),
         ]);
+        const campaignIds = normalizeIds(campaignListRaw, "campaign_id");
+        const submissionIds = normalizeIds(submissionListRaw, "submission_id");
 
         const campaigns = (await Promise.all(
           campaignIds.map((campaignId) => readApi<Campaign>(`/api/campaigns/${encodeURIComponent(campaignId)}`).catch(() => null)),
@@ -87,6 +103,7 @@ export function AppMyWorkspace() {
         setState({
           loading: false,
           error: "",
+          refreshedAt: new Date().toISOString(),
           profile: profileResult,
           campaignsOwned: owned,
           submissions,
@@ -109,7 +126,7 @@ export function AppMyWorkspace() {
     return () => {
       active = false;
     };
-  }, [wallet.address]);
+  }, [reloadNonce, wallet.address]);
 
   const averageScore = useMemo(() => {
     if (state.profile?.average_score) {
@@ -185,9 +202,14 @@ export function AppMyWorkspace() {
         title="My workspace"
         description="Your submissions, reports, campaigns, and wallet activity on ProofPilot."
         actions={
-          <Link href="/app/submit" className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200">
-            Submit project
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={reload} className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
+              Refresh
+            </button>
+            <Link href="/app/submit" className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200">
+              Submit project
+            </Link>
+          </div>
         }
       />
 
@@ -204,11 +226,14 @@ export function AppMyWorkspace() {
           </div>
           <WalletPanel variant="compact" />
         </div>
+        <p className="mt-4 text-xs text-slate-500">
+          {state.loading ? "Refreshing Bradbury live reads..." : state.refreshedAt ? `Last refreshed ${new Date(state.refreshedAt).toLocaleString()}` : "Bradbury live reads load when the wallet connects."}
+        </p>
       </SectionCard>
 
       {state.error ? <p className="mb-6 rounded-lg border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">{state.error}</p> : null}
 
-      {state.loading ? <LoadingState rows={4} /> : (
+      {state.loading && !state.submissions.length && !state.reports.length && !state.campaignsOwned.length ? <LoadingState rows={4} /> : (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <StatCard label="Total submissions" value={String(state.submissions.length)} note="Bradbury live" />
