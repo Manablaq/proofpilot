@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { readProofPilot } from "@/lib/genlayer-read";
+import { canonicalAddress } from "@/lib/address";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const campaignId = searchParams.get("campaignId") ?? "";
-  const builder = searchParams.get("builder") ?? "";
+  const builder = canonicalAddress(searchParams.get("builder") ?? "");
   const offset = Number(searchParams.get("offset") ?? "0");
   const limit = Number(searchParams.get("limit") ?? "25");
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { deployment } from "@/lib/deployment";
+import { canonicalAddress, sameAddress } from "@/lib/address";
 import type { BuilderProfile, Campaign, ReviewReport, Submission } from "@/lib/proofpilot-schema";
 import { parseJsonField, shortHash } from "@/lib/proofpilot-schema";
 import { getLocalTxHistory, type LocalTxEntry } from "@/lib/tx-history";
@@ -47,6 +48,7 @@ function normalizeIds(value: unknown, key: string) {
 
 export function AppMyWorkspace() {
   const wallet = useWallet();
+  const walletReadAddress = wallet.address ? canonicalAddress(wallet.address) : "";
   const [state, setState] = useState<WorkspaceState>({
     loading: false,
     error: "",
@@ -62,7 +64,7 @@ export function AppMyWorkspace() {
   const reload = useCallback(() => setReloadNonce((value) => value + 1), []);
 
   useEffect(() => {
-    if (!wallet.address) {
+    if (!walletReadAddress) {
       setState((current) => ({ ...current, loading: false, localTxs: [] }));
       return;
     }
@@ -70,12 +72,12 @@ export function AppMyWorkspace() {
     let active = true;
 
     async function loadWorkspace() {
-      setState((current) => ({ ...current, loading: true, error: "", localTxs: getLocalTxHistory(wallet.address) }));
+      setState((current) => ({ ...current, loading: true, error: "", localTxs: getLocalTxHistory(walletReadAddress) }));
       try {
         const [profileResult, campaignListRaw, submissionListRaw] = await Promise.all([
-          readApi<BuilderProfile>(`/api/builders/${encodeURIComponent(wallet.address)}`).catch(() => null),
+          readApi<BuilderProfile>(`/api/builders/${encodeURIComponent(walletReadAddress)}`).catch(() => null),
           readApi<unknown>("/api/campaigns").catch(() => []),
-          readApi<unknown>(`/api/submissions?builder=${encodeURIComponent(wallet.address)}&offset=0&limit=50`).catch(() => []),
+          readApi<unknown>(`/api/submissions?builder=${encodeURIComponent(walletReadAddress)}&offset=0&limit=50`).catch(() => []),
         ]);
         const campaignIds = normalizeIds(campaignListRaw, "campaign_id");
         const submissionIds = normalizeIds(submissionListRaw, "submission_id");
@@ -84,7 +86,7 @@ export function AppMyWorkspace() {
           campaignIds.map((campaignId) => readApi<Campaign>(`/api/campaigns/${encodeURIComponent(campaignId)}`).catch(() => null)),
         )).filter((campaign): campaign is Campaign => Boolean(campaign));
 
-        const owned = campaigns.filter((campaign) => campaign.owner?.toLowerCase() === wallet.address.toLowerCase());
+        const owned = campaigns.filter((campaign) => sameAddress(campaign.owner, walletReadAddress));
         const submissions = (await Promise.all(
           submissionIds.map((submissionId) => readApi<Submission>(`/api/submissions/${encodeURIComponent(submissionId)}`).catch(() => null)),
         )).filter((submission): submission is Submission => Boolean(submission));
@@ -108,7 +110,7 @@ export function AppMyWorkspace() {
           campaignsOwned: owned,
           submissions,
           reports,
-          localTxs: getLocalTxHistory(wallet.address),
+          localTxs: getLocalTxHistory(walletReadAddress),
         });
       } catch (error) {
         if (active) {
@@ -116,7 +118,7 @@ export function AppMyWorkspace() {
             ...current,
             loading: false,
             error: error instanceof Error ? error.message : "Workspace reads unavailable",
-            localTxs: getLocalTxHistory(wallet.address),
+            localTxs: getLocalTxHistory(walletReadAddress),
           }));
         }
       }
@@ -126,7 +128,7 @@ export function AppMyWorkspace() {
     return () => {
       active = false;
     };
-  }, [reloadNonce, wallet.address]);
+  }, [reloadNonce, walletReadAddress]);
 
   const averageScore = useMemo(() => {
     if (state.profile?.average_score) {
