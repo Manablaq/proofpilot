@@ -1,108 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { testnetBradbury } from "genlayer-js/chains";
-import { connectWallet, ensureBradburyNetwork, getProvider, getWalletChainId } from "@/lib/wallet";
+import { useEffect } from "react";
+import Link from "next/link";
 import { shortHash } from "@/lib/proofpilot-schema";
+import { useWallet } from "@/components/WalletProvider";
 
 type WalletPanelProps = {
   onAddress?: (address: string) => void;
   variant?: "compact" | "full";
 };
 
-const disconnectKey = "proofpilot_wallet_disconnected";
-
 export function WalletPanel({ onAddress, variant = "full" }: WalletPanelProps) {
-  const [address, setAddress] = useState("");
-  const [chainId, setChainId] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [locallyDisconnected, setLocallyDisconnected] = useState(false);
-
-  async function refresh(ignoreLocalDisconnect = false) {
-    const provider = getProvider();
-    if (!provider) {
-      setError("No browser wallet detected.");
-      return;
-    }
-
-    const disconnected = window.localStorage.getItem(disconnectKey) === "1";
-    setLocallyDisconnected(disconnected);
-    const [accounts, currentChainId] = await Promise.all([
-      provider.request<string[]>({ method: "eth_accounts" }),
-      getWalletChainId(),
-    ]);
-    const nextAddress = disconnected && !ignoreLocalDisconnect ? "" : accounts[0] ?? "";
-    setAddress(nextAddress);
-    setChainId(currentChainId);
-    onAddress?.(nextAddress);
-  }
+  const { address, chainId, error, busy, locallyDisconnected, wrongNetwork, connect, disconnect, switchNetwork } = useWallet();
 
   useEffect(() => {
-    refresh().catch(() => undefined);
-    const provider = getProvider();
-    if (!provider?.on) {
-      return;
-    }
-    const onAccountsChanged = (accounts: unknown) => {
-      if (window.localStorage.getItem(disconnectKey) === "1") {
-        setAddress("");
-        onAddress?.("");
-        return;
-      }
-      const next = Array.isArray(accounts) && typeof accounts[0] === "string" ? accounts[0] : "";
-      setAddress(next);
-      onAddress?.(next);
-    };
-    const onChainChanged = (nextChainId: unknown) => {
-      if (typeof nextChainId === "string") {
-        setChainId(nextChainId);
-      }
-    };
-    provider.on("accountsChanged", onAccountsChanged);
-    provider.on("chainChanged", onChainChanged);
-    return () => {
-      provider.removeListener?.("accountsChanged", onAccountsChanged);
-      provider.removeListener?.("chainChanged", onChainChanged);
-    };
-  }, [onAddress]);
-
-  const expectedChain = `0x${testnetBradbury.id.toString(16)}`;
-  const wrongNetwork = Boolean(chainId && chainId !== expectedChain);
-  const connect = async () => {
-    setBusy(true);
-    setError("");
-    try {
-      window.localStorage.removeItem(disconnectKey);
-      setLocallyDisconnected(false);
-      const next = await connectWallet();
-      setAddress(next);
-      onAddress?.(next);
-      await refresh(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Wallet connection failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-  const disconnect = () => {
-    window.localStorage.setItem(disconnectKey, "1");
-    setLocallyDisconnected(true);
-    setAddress("");
-    onAddress?.("");
-  };
-  const switchNetwork = async () => {
-    setBusy(true);
-    setError("");
-    try {
-      await ensureBradburyNetwork();
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network switch failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+    onAddress?.(address);
+  }, [address, onAddress]);
 
   if (variant === "compact") {
     return (
@@ -112,9 +25,9 @@ export function WalletPanel({ onAddress, variant = "full" }: WalletPanelProps) {
         </span>
         {address ? (
           <>
-            <span className="min-w-0 truncate rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-100">
+            <Link href="/app/me" className="min-w-0 truncate rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/10">
               {shortHash(address)}
-            </span>
+            </Link>
             <button
               type="button"
               onClick={disconnect}

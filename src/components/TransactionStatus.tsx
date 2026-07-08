@@ -5,6 +5,7 @@ import { deployment } from "@/lib/deployment";
 import { extractGenLayerTxId, sendPreparedTransaction, waitForEvmReceipt } from "@/lib/wallet";
 import type { ProofPilotWriteMethod } from "@/lib/proofpilot-schema";
 import { shortHash } from "@/lib/proofpilot-schema";
+import { createLocalTx, updateLocalTx } from "@/lib/tx-history";
 import { CopyButton } from "@/components/CopyButton";
 
 type TxState = {
@@ -35,11 +36,13 @@ export function TransactionStatus({
 
   async function submit() {
     setState({ phase: "preparing", evmTx: "", genlayerTx: "", error: "" });
+    let localTxId = "";
 
     try {
       if (!address) {
         throw new Error("Connect a wallet first.");
       }
+      localTxId = createLocalTx(method, address);
 
       const preparedRes = await fetch("/api/tx/prepare", {
         method: "POST",
@@ -52,26 +55,26 @@ export function TransactionStatus({
         const details = preparedJson.details ? ` ${JSON.stringify(preparedJson.details)}` : "";
         throw new Error(`${preparedJson.error || "Transaction preparation failed"}${details}`);
       }
+      updateLocalTx(localTxId, { chainId: preparedJson.data.chainId, status: "preparing" });
 
       setState((prev) => ({ ...prev, phase: "wallet" }));
       const evmTx = await sendPreparedTransaction(address, preparedJson.data);
+      updateLocalTx(localTxId, { evmTx, status: "sent" });
 
       setState((prev) => ({ ...prev, phase: "receipt", evmTx }));
       const receipt = await waitForEvmReceipt(evmTx);
       const genlayerTx = extractGenLayerTxId(receipt) ?? "";
+      updateLocalTx(localTxId, { evmTx, genlayerTx, status: "confirmed" });
 
       setState({ phase: "confirmed", evmTx, genlayerTx, error: "" });
-      try {
-        const key = "proofpilot_tx_history";
-        const current = JSON.parse(window.localStorage.getItem(key) || "[]") as unknown[];
-        window.localStorage.setItem(key, JSON.stringify([
-          { method, evmTx, genlayerTx, createdAt: new Date().toISOString() },
-          ...current,
-        ].slice(0, 25)));
-      } catch {
-      }
       onConfirmed?.({ evmTx, genlayerTx });
     } catch (error) {
+      if (localTxId) {
+        updateLocalTx(localTxId, {
+          status: "error",
+          error: error instanceof Error ? error.message : "Transaction failed",
+        });
+      }
       setState((prev) => ({
         ...prev,
         phase: "error",

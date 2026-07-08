@@ -5,6 +5,7 @@ import { deployment } from "@/lib/deployment";
 
 const nav = [
   ["Overview", "/app"],
+  ["My Workspace", "/app/me"],
   ["Campaigns", "/app/campaigns"],
   ["Submit Project", "/app/submit"],
   ["Review Queue", `/app/submissions/${deployment.submissionId}`],
