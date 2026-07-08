@@ -51,7 +51,7 @@ const templates = [
   },
 ] as const;
 
-export function AppSubmitProject({ campaignId }: { campaignId: string }) {
+export function AppSubmitProject({ campaignId, preserveCampaignId = false }: { campaignId: string; preserveCampaignId?: boolean }) {
   const [address, setAddress] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<(typeof templates)[number]["id"]>("web3");
   const selected = templates.find((template) => template.id === selectedTemplate) ?? templates[0];
@@ -116,7 +116,7 @@ export function AppSubmitProject({ campaignId }: { campaignId: string }) {
       </SectionCard>
 
       {selected.active ? (
-        <SubmissionForm address={address} campaignId={campaignId} />
+        <SubmissionForm address={address} campaignId={campaignId} preserveCampaignId={preserveCampaignId} />
       ) : (
         <LockedTemplatePreview template={selected} onUseWeb3={() => setSelectedTemplate("web3")} />
       )}

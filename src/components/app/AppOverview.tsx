@@ -67,6 +67,7 @@ export function AppOverview() {
   }, []);
 
   const scoreItems = useMemo(() => parseJsonField<Record<string, number>>(state.report?.scores_json, {}), [state.report]);
+  const prettyValue = (value: string) => value.replaceAll("_", " ");
 
   return (
     <div>
@@ -97,7 +98,12 @@ export function AppOverview() {
             <StatCard label="Submissions" value={state.submission ? "1" : "0"} note={state.submission?.status ?? "No live submission loaded"} tone="violet" />
             <StatCard label="Reports" value={state.report ? "1" : "0"} note={state.report?.report_id ?? "No report loaded"} tone="emerald" />
             <StatCard label="Average score" value={String(state.profile?.average_score ?? state.report?.total_score ?? 0)} note="Builder profile" tone="amber" />
-            <StatCard label="Contract" value={shortHash(deployment.contractAddress)} note="Bradbury v6" />
+            <StatCard label="Contract" value={shortHash(deployment.contractAddress)} note="Bradbury v6" valueSize="compact">
+              <CopyButton value={deployment.contractAddress} />
+              <a className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 hover:bg-white/10" href={deployment.explorerContract} target="_blank" rel="noreferrer">
+                Explorer
+              </a>
+            </StatCard>
             <StatCard label="Network" value="Bradbury" note="GenLayer testnet" tone="emerald" />
           </div>
 
@@ -117,13 +123,13 @@ export function AppOverview() {
                 <div className="mt-6 grid gap-4 sm:grid-cols-4">
                   {[
                     ["Score", String(state.report.total_score)],
-                    ["Risk", state.report.risk_level],
-                    ["Confidence", state.report.confidence],
-                    ["Recommendation", state.report.recommendation],
+                    ["Risk", prettyValue(state.report.risk_level)],
+                    ["Confidence", prettyValue(state.report.confidence)],
+                    ["Recommendation", prettyValue(state.report.recommendation)],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                    <div key={label} className="min-w-0 rounded-lg border border-white/10 bg-white/[0.03] p-4">
                       <p className="text-xs uppercase text-slate-500">{label}</p>
-                      <p className="mt-2 break-words text-sm font-semibold text-white">{value}</p>
+                      <p className="mt-2 text-sm font-semibold capitalize leading-5 text-white">{value.toLowerCase()}</p>
                     </div>
                   ))}
                 </div>
@@ -150,9 +156,14 @@ export function AppOverview() {
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                     <p className="text-sm text-slate-500">{label}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <code className="break-all text-sm text-slate-100">{value}</code>
-                      <CopyButton value={value} />
+                    <div className="mt-2 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <code className="min-w-0 break-all rounded-md bg-slate-950/60 px-2 py-1 font-mono text-xs leading-6 text-slate-100 sm:text-sm">{value}</code>
+                      <div className="flex shrink-0 gap-2">
+                        <CopyButton value={value} />
+                        <a className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 hover:bg-white/10" href={`${deployment.explorerBase}/${label === "Contract" ? "address" : "tx"}/${value}`} target="_blank" rel="noreferrer">
+                          Explorer
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}

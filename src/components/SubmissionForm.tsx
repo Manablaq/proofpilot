@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { deployment } from "@/lib/deployment";
+import type { Campaign } from "@/lib/proofpilot-schema";
 import { isHex, isUrl } from "@/lib/proofpilot-schema";
 import { GlassCard } from "@/components/GlassCard";
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { StatusBadge, statusTone } from "@/components/app/StatusBadge";
 
 const fields = [
-  ["campaign_id", "Campaign ID", "text", true],
+  ["campaign_id", "Target campaign", "text", true],
   ["project_name", "Project name", "text", true],
   ["summary", "Summary", "textarea", false],
   ["live_app_url", "Live app URL", "url", true],
@@ -45,7 +47,15 @@ type SubmissionValues = {
   fixes_explanation: string;
 };
 
-export function SubmissionForm({ address, campaignId = deployment.campaignId }: { address: string; campaignId?: string }) {
+export function SubmissionForm({
+  address,
+  campaignId = deployment.campaignId,
+  preserveCampaignId = false,
+}: {
+  address: string;
+  campaignId?: string;
+  preserveCampaignId?: boolean;
+}) {
   const [values, setValues] = useState<SubmissionValues>({
     campaign_id: campaignId,
     project_name: "",
@@ -59,6 +69,8 @@ export function SubmissionForm({ address, campaignId = deployment.campaignId }: 
     fixes_explanation: "",
   });
   const [gasLimit, setGasLimit] = useState("5000000");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const errors = useMemo(() => {
     const next: Record<string, string> = {};
@@ -79,6 +91,30 @@ export function SubmissionForm({ address, campaignId = deployment.campaignId }: 
     return next;
   }, [values]);
   const invalid = Object.keys(errors).length > 0;
+  const visibleErrors = useMemo(() => {
+    const next: Record<string, string> = {};
+    for (const [key, value] of Object.entries(errors)) {
+      if (submitted || touched[key]) {
+        next[key] = value;
+      }
+    }
+    return next;
+  }, [errors, submitted, touched]);
+
+  function updateField(key: keyof SubmissionValues, value: string) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function touchField(key: keyof SubmissionValues) {
+    setTouched((current) => ({ ...current, [key]: true }));
+  }
+
+  const handleCampaignChange = useCallback((value: string, markTouched = true) => {
+    setValues((current) => ({ ...current, campaign_id: value }));
+    if (markTouched) {
+      setTouched((current) => ({ ...current, campaign_id: true }));
+    }
+  }, []);
 
   return (
     <GlassCard className="overflow-hidden p-0">
@@ -89,63 +125,232 @@ export function SubmissionForm({ address, campaignId = deployment.campaignId }: 
         </p>
       </div>
       <div className="divide-y divide-white/10">
-        <FormSection title="Campaign" description="Choose the campaign that will receive this submission.">
-          <Field name="campaign_id" label="Campaign ID" value={values.campaign_id} error={errors.campaign_id} onChange={(value) => setValues((current) => ({ ...current, campaign_id: value }))} />
+        <FormSection title="Target campaign" description="This is the campaign that will receive the submission.">
+          <CampaignSelector
+            value={values.campaign_id}
+            preserveSelectedCampaign={preserveCampaignId}
+            error={visibleErrors.campaign_id}
+            onChange={handleCampaignChange}
+          />
         </FormSection>
 
         <FormSection title="Project identity" description="Give reviewers enough context to understand the project before reading evidence.">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="project_name" label="Project name" value={values.project_name} error={errors.project_name} onChange={(value) => setValues((current) => ({ ...current, project_name: value }))} />
-            <Field name="summary" label="Summary" value={values.summary} textarea error={errors.summary} onChange={(value) => setValues((current) => ({ ...current, summary: value }))} className="md:col-span-2" />
+            <Field name="project_name" label="Project name" value={values.project_name} error={visibleErrors.project_name} onChange={(value) => updateField("project_name", value)} onBlur={() => touchField("project_name")} />
+            <Field name="summary" label="Summary" value={values.summary} textarea error={visibleErrors.summary} onChange={(value) => updateField("summary", value)} onBlur={() => touchField("summary")} className="md:col-span-2" />
           </div>
         </FormSection>
 
         <FormSection title="Public evidence" description="Evidence fetched by ProofPilot is bounded, treated as untrusted, and scored conservatively on failures.">
           <div className="grid gap-4 md:grid-cols-3">
-            <Field name="live_app_url" label="Live app URL" value={values.live_app_url} error={errors.live_app_url} onChange={(value) => setValues((current) => ({ ...current, live_app_url: value }))} />
-            <Field name="github_repo_url" label="GitHub repo URL" value={values.github_repo_url} error={errors.github_repo_url} onChange={(value) => setValues((current) => ({ ...current, github_repo_url: value }))} />
-            <Field name="docs_url" label="Docs / README URL" value={values.docs_url} error={errors.docs_url} onChange={(value) => setValues((current) => ({ ...current, docs_url: value }))} />
+            <Field name="live_app_url" label="Live app URL" value={values.live_app_url} error={visibleErrors.live_app_url} onChange={(value) => updateField("live_app_url", value)} onBlur={() => touchField("live_app_url")} />
+            <Field name="github_repo_url" label="GitHub repo URL" value={values.github_repo_url} error={visibleErrors.github_repo_url} onChange={(value) => updateField("github_repo_url", value)} onBlur={() => touchField("github_repo_url")} />
+            <Field name="docs_url" label="Docs / README URL" value={values.docs_url} error={visibleErrors.docs_url} onChange={(value) => updateField("docs_url", value)} onBlur={() => touchField("docs_url")} />
           </div>
         </FormSection>
 
         <FormSection title="On-chain proof" description="The v6 contract requires Web3 deployment proof fields. Do not enter placeholders.">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="contract_address" label="Contract address" value={values.contract_address} error={errors.contract_address} onChange={(value) => setValues((current) => ({ ...current, contract_address: value }))} />
-            <Field name="deployment_tx_hash" label="Deployment tx hash" value={values.deployment_tx_hash} error={errors.deployment_tx_hash} onChange={(value) => setValues((current) => ({ ...current, deployment_tx_hash: value }))} />
+            <Field name="contract_address" label="Contract address" value={values.contract_address} error={visibleErrors.contract_address} onChange={(value) => updateField("contract_address", value)} onBlur={() => touchField("contract_address")} />
+            <Field name="deployment_tx_hash" label="Deployment tx hash" value={values.deployment_tx_hash} error={visibleErrors.deployment_tx_hash} onChange={(value) => updateField("deployment_tx_hash", value)} onBlur={() => touchField("deployment_tx_hash")} />
           </div>
         </FormSection>
 
         <FormSection title="Reviewer context" description="Optional context helps explain what changed or what should be checked.">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field name="reviewer_feedback_text" label="Reviewer feedback" value={values.reviewer_feedback_text} textarea error={errors.reviewer_feedback_text} onChange={(value) => setValues((current) => ({ ...current, reviewer_feedback_text: value }))} />
-            <Field name="fixes_explanation" label="Fixes explanation" value={values.fixes_explanation} textarea error={errors.fixes_explanation} onChange={(value) => setValues((current) => ({ ...current, fixes_explanation: value }))} />
+            <Field name="reviewer_feedback_text" label="Reviewer feedback" value={values.reviewer_feedback_text} textarea error={visibleErrors.reviewer_feedback_text} onChange={(value) => updateField("reviewer_feedback_text", value)} onBlur={() => touchField("reviewer_feedback_text")} />
+            <Field name="fixes_explanation" label="Fixes explanation" value={values.fixes_explanation} textarea error={visibleErrors.fixes_explanation} onChange={(value) => updateField("fixes_explanation", value)} onBlur={() => touchField("fixes_explanation")} />
           </div>
         </FormSection>
 
-        <FormSection title="Transaction settings" description="Bradbury submit_project has needed explicit gas in practice. You can adjust before signing.">
-          <label className="block max-w-sm">
-            <span className="text-sm font-medium text-slate-200">Gas limit</span>
-            <input
-              value={gasLimit}
-              onChange={(event) => setGasLimit(event.target.value)}
-              inputMode="numeric"
-              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none focus:border-cyan-300"
-            />
-            <span className="mt-1 block text-xs text-slate-500">Default is 5,000,000 for Bradbury submit_project.</span>
-          </label>
+        <FormSection title="Transaction settings" description="Editable signing configuration, separate from project evidence.">
+          <details className="rounded-lg border border-white/10 bg-slate-950/45 p-4">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100">
+              Advanced transaction settings
+            </summary>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Method</p>
+                <p className="mt-2 font-mono text-sm text-slate-100">submit_project</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Network</p>
+                <p className="mt-2 text-sm font-semibold text-slate-100">Bradbury</p>
+              </div>
+              <label className="block rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Default gas</span>
+                <input
+                  value={gasLimit}
+                  onChange={(event) => setGasLimit(event.target.value)}
+                  inputMode="numeric"
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-cyan-300"
+                />
+              </label>
+            </div>
+            <p className="mt-4 text-xs leading-5 text-slate-500">
+              Default chosen from previous successful Bradbury submit_project writes. Change only if a transaction fails.
+            </p>
+          </details>
         </FormSection>
       </div>
       <div className="border-t border-white/10 p-6 sm:p-8">
-        <TransactionStatus
-          address={address}
-          method="submit_project"
-          values={values}
-          gasLimit={gasLimit}
-          disabled={invalid}
-          buttonLabel="Submit project"
-        />
+        {invalid ? (
+          <p className="mb-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm text-amber-100">
+            Complete the required Web3 evidence fields before preparing a wallet-signed transaction.
+          </p>
+        ) : null}
+        {invalid ? (
+          <button
+            type="button"
+            onClick={() => setSubmitted(true)}
+            className="w-full rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            Review required fields
+          </button>
+        ) : (
+          <TransactionStatus
+            address={address}
+            method="submit_project"
+            values={values}
+            gasLimit={gasLimit}
+            buttonLabel="Submit project"
+          />
+        )}
       </div>
     </GlassCard>
+  );
+}
+
+function CampaignSelector({
+  value,
+  preserveSelectedCampaign,
+  error,
+  onChange,
+}: {
+  value: string;
+  preserveSelectedCampaign: boolean;
+  error?: string;
+  onChange: (value: string, markTouched?: boolean) => void;
+}) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCampaigns() {
+      try {
+        const listRes = await fetch("/api/campaigns", { cache: "no-store" });
+        const listJson = await listRes.json();
+        if (!listRes.ok || !listJson.ok || !Array.isArray(listJson.data)) {
+          throw new Error(listJson.error || "Campaigns unavailable");
+        }
+
+        const details = await Promise.all(
+          listJson.data.map(async (campaignId: string) => {
+            try {
+              const detailRes = await fetch(`/api/campaigns/${encodeURIComponent(campaignId)}`, { cache: "no-store" });
+              const detailJson = await detailRes.json();
+              return detailRes.ok && detailJson.ok ? detailJson.data as Campaign : null;
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        if (!active) {
+          return;
+        }
+
+        const loaded = details.filter((campaign): campaign is Campaign => Boolean(campaign));
+        setCampaigns(loaded);
+        setReadError("");
+      } catch (error) {
+        if (active) {
+          setReadError(error instanceof Error ? error.message : "Campaigns unavailable");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadCampaigns();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (preserveSelectedCampaign || !campaigns.length || campaigns.some((campaign) => campaign.campaign_id === value)) {
+      return;
+    }
+
+    const firstActive = campaigns.find((campaign) => campaign.status === "ACTIVE") ?? campaigns[0];
+    if (firstActive) {
+      onChange(firstActive.campaign_id, false);
+    }
+  }, [campaigns, onChange, preserveSelectedCampaign, value]);
+
+  const selected = campaigns.find((campaign) => campaign.campaign_id === value);
+  const showManual = readError || !campaigns.length || !selected;
+
+  return (
+    <div className="space-y-4">
+      {campaigns.length ? (
+        <div>
+          <label className="text-sm font-medium text-slate-200" htmlFor="target-campaign">
+            Target campaign
+          </label>
+          <select
+            id="target-campaign"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none focus:border-cyan-300"
+          >
+            {!campaigns.some((campaign) => campaign.campaign_id === value) ? <option value={value}>{value}</option> : null}
+            {campaigns.map((campaign) => (
+              <option key={campaign.campaign_id} value={campaign.campaign_id}>
+                {campaign.title || campaign.campaign_id} ({campaign.campaign_id})
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      {selected ? (
+        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Selected campaign</p>
+              <h4 className="mt-2 truncate text-lg font-semibold text-white">{selected.title || selected.campaign_id}</h4>
+              <p className="mt-1 font-mono text-xs text-slate-500">{selected.campaign_id}</p>
+            </div>
+            <StatusBadge tone={statusTone(selected.status)}>{selected.status}</StatusBadge>
+          </div>
+          {selected.description ? <p className="mt-3 text-sm leading-6 text-slate-400">{selected.description}</p> : null}
+        </div>
+      ) : null}
+
+      {showManual ? (
+        <label className="block">
+          <span className="text-sm font-medium text-slate-200">Manual campaign ID</span>
+          <input
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 font-mono text-sm text-slate-100 outline-none focus:border-cyan-300"
+          />
+          <span className="mt-1 block text-xs leading-5 text-slate-500">
+            {loading ? "Loading live campaigns..." : readError ? "Live campaign list is unavailable; enter a known campaign id." : "Use this when submitting to a campaign not returned by the public list yet."}
+          </span>
+        </label>
+      ) : null}
+
+      <p className="text-xs leading-5 text-slate-500">This is the campaign that will receive the submission.</p>
+      {error ? <span className="block text-sm text-amber-200">{error}</span> : null}
+    </div>
   );
 }
 
@@ -167,6 +372,7 @@ function Field({
   value,
   error,
   onChange,
+  onBlur,
   textarea = false,
   className = "",
 }: {
@@ -175,6 +381,7 @@ function Field({
   value: string;
   error?: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   textarea?: boolean;
   className?: string;
 }) {
@@ -185,6 +392,7 @@ function Field({
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
           rows={4}
           className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none focus:border-cyan-300"
         />
@@ -192,6 +400,7 @@ function Field({
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
           className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none focus:border-cyan-300"
         />
       )}

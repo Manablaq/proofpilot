@@ -90,7 +90,7 @@ export function CampaignDetailApp({ campaignId }: { campaignId: string }) {
             ))}
           </div>
         </GlassCard>
-        <SubmissionForm address={address} campaignId={campaignId} />
+        <SubmissionForm address={address} campaignId={campaignId} preserveCampaignId />
       </div>
     </section>
   );

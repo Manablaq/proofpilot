@@ -9,7 +9,8 @@ type PageProps = {
 
 export default async function SubmitProjectPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const campaignIdFromQuery = Boolean(params?.campaignId);
   const campaignId = params?.campaignId || deployment.campaignId;
 
-  return <AppSubmitProject campaignId={campaignId} />;
+  return <AppSubmitProject campaignId={campaignId} preserveCampaignId={campaignIdFromQuery} />;
 }
