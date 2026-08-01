@@ -57,7 +57,7 @@ export function ReportDetailApp({ reportId }: { reportId: string }) {
         <div>
           <h1 className="text-4xl font-semibold text-white sm:text-5xl">{reportId}</h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-300">
-            Public on-chain review report from ProofPilot v6.
+            Public on-chain review report from ProofPilot V7.
           </p>
         </div>
         {report ? (

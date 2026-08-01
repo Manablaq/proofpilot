@@ -24,6 +24,48 @@ export const proofPilotMethods = {
   },
 } as const;
 
+export const rubricKeys = [
+  "live_app_availability",
+  "github_repository_availability",
+  "readme_documentation_quality",
+  "contract_address_consistency",
+  "deployment_transaction_proof",
+  "reviewer_feedback_addressed",
+  "professional_presentation",
+  "risk_broken_links_or_mismatch_checks",
+] as const;
+
+export type RubricKey = typeof rubricKeys[number];
+
+export const defaultRubric: Record<RubricKey, number> = {
+  live_app_availability: 15,
+  github_repository_availability: 10,
+  readme_documentation_quality: 15,
+  contract_address_consistency: 20,
+  deployment_transaction_proof: 15,
+  reviewer_feedback_addressed: 15,
+  professional_presentation: 5,
+  risk_broken_links_or_mismatch_checks: 5,
+};
+
+export function validateRubric(value: string): string | null {
+  if (!value.trim() || value.trim() === "{}") return null;
+  try {
+    const rubric = JSON.parse(value) as Record<string, unknown>;
+    const keys = Object.keys(rubric).sort();
+    if (keys.length !== rubricKeys.length || keys.some((key, index) => key !== [...rubricKeys].sort()[index])) {
+      return "Use every supported rubric category exactly once.";
+    }
+    const total = rubricKeys.reduce((sum, key) => {
+      const points = rubric[key];
+      return sum + (typeof points === "number" && Number.isInteger(points) && points >= 0 && points <= 100 ? points : Number.NaN);
+    }, 0);
+    return total === 100 ? null : "Rubric points must be whole numbers totaling exactly 100.";
+  } catch {
+    return "Must be a valid rubric JSON object.";
+  }
+}
+
 export type ProofPilotWriteMethod = keyof typeof proofPilotMethods;
 
 export type ApiOk<T> = {

@@ -22,7 +22,7 @@ export function RunReviewPanel({
     <GlassCard className="p-6 sm:p-8">
       <h2 className="text-2xl font-semibold text-white">Run AI review</h2>
       <p className="mt-2 text-sm leading-6 text-slate-400">
-        V6 runs leader-side AI review over compact evidence facts and validator-side deterministic consensus checks.
+        V7 runs bounded AI review over compact evidence facts, while validators independently fetch and reproduce the review before consensus.
       </p>
       {!isOwner ? (
         <p className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-sm text-amber-100">

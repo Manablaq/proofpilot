@@ -8,7 +8,6 @@ const nav = [
   ["My Workspace", "/app/me"],
   ["Campaigns", "/app/campaigns"],
   ["Submit Project", "/app/submit"],
-  ["Review Queue", `/app/submissions/${deployment.submissionId}`],
   ["Reports", "/app/reports"],
   ["Builders", "/app/builders"],
   ["Transactions", "/app/transactions"],
@@ -45,9 +44,9 @@ export function AppSidebar({ pathname, onNavigate }: { pathname: string; onNavig
         })}
       </nav>
       <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Live case</p>
-        <p className="mt-2 text-sm font-semibold text-white">{deployment.campaignId}</p>
-        <p className="mt-1 text-xs text-slate-500">{deployment.reportId} · score {deployment.reviewScore}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Live deployment</p>
+        <p className="mt-2 text-sm font-semibold text-white">Finalized V7</p>
+        <p className="mt-1 text-xs text-slate-500">End-to-end fixture pending</p>
       </div>
     </div>
   );

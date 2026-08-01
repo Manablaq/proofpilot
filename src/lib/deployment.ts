@@ -1,34 +1,32 @@
 export const deployment = {
-  contractAddress: "0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87",
+  release: "v7",
+  contractAddress: "0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b",
   deploymentTx:
-    "0x9a5add3f91daa277f1a09d27e0dd83ee27ec3d04c132c29c7e89e7b9d62d5877",
-  smokeTestTx:
-    "0x8a218d872394e7ef393ae3cd3c5c42c8b25d97afab67f550548f60db5b9eb99b",
-  submitGenlayerTx:
-    "0x550e04c381b332ceae70fb3d9b3a4e5bbce8bb1955fad9b7229672d2db6fabb4",
-  runReviewTx:
-    "0x03dce7d374e767e4a99b9b8b6da51e5a704aa8ba402c96081723f32a882ab1f8",
+    "0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a",
+  smokeTestTx: "",
+  submitGenlayerTx: "",
+  runReviewTx: "",
   explorerContract:
-    "https://explorer-bradbury.genlayer.com/address/0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87",
+    "https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b",
   explorerTx:
-    "https://explorer-bradbury.genlayer.com/tx/0x9a5add3f91daa277f1a09d27e0dd83ee27ec3d04c132c29c7e89e7b9d62d5877",
+    "https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a",
   explorerBase: "https://explorer-bradbury.genlayer.com",
   liveApp: "https://proofpilot-two.vercel.app",
   githubRepo: "https://github.com/Manablaq/proofpilot",
   rpc: "https://rpc-bradbury.genlayer.com",
   network: "GenLayer Bradbury",
-  smokeTestStatus: "passed",
-  validatorAgreement: "5/5",
-  campaignId: "campaign_1",
-  campaignTitle: "ProofPilot Smoke Test",
-  campaignStatus: "ACTIVE",
-  builderAddress: "0x1f87Ae197af539253978d435aD45cCf28Fb95024",
-  submissionId: "submission_1",
-  reportId: "report_1",
-  snapshotId: "snapshot_1",
-  reviewScore: 61,
-  reviewStatus: "NEEDS_MINOR_FIXES",
-  reviewRecommendation: "REQUEST_MINOR_CHANGES",
+  smokeTestStatus: "V7_E2E_PENDING",
+  validatorAgreement: "Not yet applicable",
+  campaignId: "",
+  campaignTitle: "No V7 campaign yet",
+  campaignStatus: "PENDING_V7_E2E",
+  builderAddress: "",
+  submissionId: "",
+  reportId: "",
+  snapshotId: "",
+  reviewScore: 0,
+  reviewStatus: "PENDING_V7_E2E",
+  reviewRecommendation: "PENDING_V7_E2E",
 } as const;
 
 export const navItems = [

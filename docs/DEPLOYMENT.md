@@ -1,6 +1,28 @@
-# ProofPilot Deployment
+# ProofPilot Deployments
 
-## Final Bradbury V6 Deployment
+## Final Bradbury V7 Deployment
+
+| Field | Value |
+| --- | --- |
+| Network | GenLayer Bradbury Testnet |
+| RPC | `https://rpc-bradbury.genlayer.com` |
+| Contract address | `0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b` |
+| Deployment transaction hash | `0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a` |
+| Deployment status | `FINALIZED` |
+| Stored outcome | `accepted` |
+| Post-deployment read | `list_campaigns(0, 1)` returned `[]` |
+| V7 fixture state | No V7 campaign, submission, or review has been claimed yet |
+
+- Contract: https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b
+- Deployment transaction: https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a
+
+The browser frontend must be redeployed after this repository change so its public production build uses the finalized V7 address. The V7 release is not portal-submission-ready until the end-to-end evidence fixture in [`V7_RELEASE_CHECKLIST.md`](V7_RELEASE_CHECKLIST.md) is complete.
+
+## Historical V6 Deployment
+
+> This section records the historical V6 Bradbury smoke test only. It is not evidence that V7 has completed a campaign or review.
+
+### Final Bradbury V6 Deployment
 
 | Field | Value |
 | --- | --- |
@@ -10,7 +32,7 @@
 | Contract address | `0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87` |
 | Deployment transaction hash | `0x9a5add3f91daa277f1a09d27e0dd83ee27ec3d04c132c29c7e89e7b9d62d5877` |
 | Deployment status | Successful |
-| Current deployed contract source | `contracts/proofpilot.py` |
+| Historical deployed source | ProofPilot v6 source at the historical deployment commit |
 | Review architecture | Leader-side AI review, validator-side deterministic consensus checks |
 
 ## Explorer Links

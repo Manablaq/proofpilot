@@ -1,4 +1,4 @@
-import { proofPilotMethods, type ProofPilotWriteMethod, isHex, isUrl } from "@/lib/proofpilot-schema";
+import { proofPilotMethods, type ProofPilotWriteMethod, isHex, isUrl, validateRubric } from "@/lib/proofpilot-schema";
 
 export type PrepareInput = {
   method: ProofPilotWriteMethod;
@@ -84,6 +84,8 @@ export function validatePrepareInput(input: unknown): { ok: true; data: Prepared
     const requirements = optionalText(errors, values, "submission_requirements_json", 6000) || "{}";
     const policy = optionalText(errors, values, "review_policy_json", 6000) || "{}";
     jsonObject(errors, customRubric, "custom_rubric_json");
+    const rubricError = validateRubric(customRubric);
+    if (rubricError) errors.custom_rubric_json = rubricError;
     jsonObject(errors, requirements, "submission_requirements_json");
     jsonObject(errors, policy, "review_policy_json");
     args = [

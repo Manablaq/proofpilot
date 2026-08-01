@@ -39,25 +39,15 @@ export function AppOverview() {
       setState((current) => ({ ...current, loading: true }));
     }
     try {
-      const [campaignsRes, submissionRes, reportRes, profileRes] = await Promise.all([
-        fetch("/api/campaigns", { cache: "no-store" }),
-        fetch(`/api/submissions/${deployment.submissionId}`, { cache: "no-store" }),
-        fetch(`/api/reports/${deployment.reportId}`, { cache: "no-store" }),
-        fetch(`/api/builders/${deployment.builderAddress}`, { cache: "no-store" }),
-      ]);
-      const [campaignsJson, submissionJson, reportJson, profileJson] = await Promise.all([
-        campaignsRes.json(),
-        submissionRes.json(),
-        reportRes.json(),
-        profileRes.json(),
-      ]);
+      const campaignsRes = await fetch("/api/campaigns", { cache: "no-store" });
+      const campaignsJson = await campaignsRes.json();
       setState({
         loading: false,
         error: "",
         campaigns: Array.isArray(campaignsJson.data) ? campaignsJson.data : [],
-        submission: submissionJson.ok ? submissionJson.data : null,
-        report: reportJson.ok ? reportJson.data : null,
-        profile: profileJson.ok ? profileJson.data : null,
+        submission: null,
+        report: null,
+        profile: null,
       });
     } catch (error) {
       setState((current) => ({
@@ -133,7 +123,7 @@ export function AppOverview() {
             <StatCard label="Submissions" value={state.submission ? "1" : "0"} note={state.submission?.status ?? "No live submission loaded"} tone="violet" />
             <StatCard label="Reports" value={state.report ? "1" : "0"} note={state.report?.report_id ?? "No report loaded"} tone="emerald" />
             <StatCard label="Average score" value={String(state.profile?.average_score ?? state.report?.total_score ?? 0)} note="Builder profile" tone="amber" />
-            <StatCard label="Contract" value={shortHash(deployment.contractAddress)} note="Bradbury v6" valueSize="compact">
+            <StatCard label="Contract" value={shortHash(deployment.contractAddress)} note="Finalized Bradbury v7" valueSize="compact">
               <CopyButton value={deployment.contractAddress} />
               <a className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 hover:bg-white/10" href={deployment.explorerContract} target="_blank" rel="noreferrer">
                 Explorer
@@ -146,10 +136,10 @@ export function AppOverview() {
             <SectionCard className="p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Recent live case</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-white">{deployment.campaignTitle}</h2>
+                  <p className="text-sm text-slate-500">V7 end-to-end status</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">No V7 review fixture yet</h2>
                   <p className="mt-2 text-sm text-slate-400">
-                    {deployment.submissionId} reviewed into {deployment.reportId}.
+                    The contract is finalized and readable. Create a campaign, submit public evidence, then run an independent validator review.
                   </p>
                 </div>
                 {state.report ? <StatusBadge tone={statusTone(state.report.status)}>{state.report.status}</StatusBadge> : null}
@@ -169,14 +159,14 @@ export function AppOverview() {
                   ))}
                 </div>
               ) : (
-                <EmptyState title="No report loaded" description="The live report endpoint did not return a report. Try refreshing or inspect the contract directly." />
+                <EmptyState title="No V7 report yet" description="V7 has no seeded campaign or report. Create the release fixture before claiming end-to-end verification." />
               )}
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={`/app/reports/${deployment.reportId}`} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100">
-                  Open report certificate
+                <Link href="/app/campaigns/new" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100">
+                  Create V7 campaign
                 </Link>
-                <Link href={`/app/submissions/${deployment.submissionId}`} className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
-                  Open submission
+                <Link href="/app/campaigns" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
+                  Inspect campaigns
                 </Link>
               </div>
             </SectionCard>
@@ -187,7 +177,6 @@ export function AppOverview() {
                 {[
                   ["Contract", deployment.contractAddress],
                   ["Deployment tx", deployment.deploymentTx],
-                  ["Run review tx", deployment.runReviewTx],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                     <p className="text-sm text-slate-500">{label}</p>

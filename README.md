@@ -2,6 +2,8 @@
 
 AI consensus review for the builder economy.
 
+> **Release status — V7 deployed and finalized on Bradbury:** [contract `0x3764…841b`](https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b) was finalized from [deployment `0xe082…373a`](https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a). V7 replaces the historical V6 release for new use. Its end-to-end campaign, evidence, and review fixture is still required before describing the project as portal-submission-ready; see [`docs/V7_RELEASE_CHECKLIST.md`](docs/V7_RELEASE_CHECKLIST.md).
+
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 
 ## What ProofPilot Does
@@ -9,6 +11,8 @@ ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, 
 ProofPilot is a GenLayer-native review engine for programs that need credible, repeatable evaluation of builder work. A builder submits evidence for a project, including a live app URL, GitHub repository, documentation, deployed contract address, deployment transaction hash, reviewer feedback, and an explanation of fixes. A GenLayer Intelligent Contract then fetches evidence through GenLayer web access, evaluates the submission against a campaign rubric, and stores a public review report.
 
 The goal is not to replace human program owners. The goal is to give them an auditable AI consensus layer that can check live evidence, apply transparent criteria, explain scoring, and produce consistent recommendations before a final approval, grant release, bounty acceptance, or hackathon judging decision.
+
+**Scope boundary:** ProofPilot verifies public resource reachability and whether submitted explorer responses contain the submitted contract address or transaction identifier. These are separate public checks; they do not prove that a transaction deployed a particular contract, nor do they establish legal identity, ownership, security, originality, or universal quality. Its AI assessment is deliberately bounded by captured facts and the campaign rubric, and a human program owner makes the final decision.
 
 ## Target Use Cases
 
@@ -23,7 +27,7 @@ The goal is not to replace human program owners. The goal is to give them an aud
 
 ProofPilot is designed as a flagship GenLayer application, not a minimal demo. The documented system includes:
 
-- Campaigns with configurable rubrics and eligibility rules
+- Campaigns with executable, fixed-category 100-point rubrics and eligibility rules
 - Builder submissions with structured evidence fields
 - Evidence snapshots captured through GenLayer web access
 - AI consensus review reports with strict JSON output
@@ -37,9 +41,9 @@ ProofPilot is designed as a flagship GenLayer application, not a minimal demo. T
 2. A builder submits project evidence.
 3. The contract fetches compact evidence facts using GenLayer web access, currently `gl.nondet.web.get`.
 4. Leader-side AI review scores the compact facts while prompt-injection defenses treat fetched content as untrusted.
-5. Validator-side deterministic consensus checks independently verify compact facts, score rules, failed evidence representation, and report structure.
+5. Validators independently fetch the same compact evidence, rerun the bounded AI assessment, and compare objective categories exactly plus subjective categories within explicit tolerances.
 6. The strict JSON review report is stored publicly and linked to the campaign, submission, and builder profile.
-7. Unsupported or unfetched evidence, such as metadata-only contract and transaction proof in v6, is scored conservatively.
+7. Contract and deployment identifiers are fetched from their submitted explorer resources. A category is forced to zero and recorded as unverified when its submitted identifier is not present in the fetched response. The report labels these as independent checks and does not claim deployment linkage.
 8. The builder may request a re-check or appeal if fixes are made or evidence changes.
 9. A human reviewer may optionally record a final decision.
 
@@ -77,21 +81,22 @@ Recommendations:
 ProofPilot documentation assumes these GenLayer-specific constraints:
 
 - Raw URLs must not be placed into LLM prompts with the expectation that validators will browse them.
-- Contract web access must use GenLayer web access functions. The live v6 review path uses `gl.nondet.web.get` and does not use `gl.nondet.web.render`.
-- The live v6 review path uses leader-side AI review with validator-side deterministic consensus checks through `gl.vm.run_nondet_unsafe`.
+- Contract web access must use GenLayer web access functions. The V7 review path uses `gl.nondet.web.get` and does not use `gl.nondet.web.render`.
+- The V7 review path uses bounded leader-side AI review with validator-side independent evidence fetches and review reproduction through `gl.vm.run_nondet_unsafe`.
 - Fetched web content must be treated as untrusted evidence.
 - Review prompts must defend against prompt injection from fetched webpages, README files, docs, and app pages.
 - Review output must be strict JSON.
 - Fetch failures must be handled gracefully and scored conservatively.
 
-## Bradbury Deployment
+## Bradbury V7 Deployment
 
-ProofPilot v6 is deployed on GenLayer Bradbury Testnet.
+ProofPilot V7 is deployed, finalized, and readable on GenLayer Bradbury Testnet. It is a clean deployment: no V7 campaign, submission, or report is presented as existing until the release fixture is completed.
 
-- Contract address: `0xC11b90c7c2C1C9F7E99ef767c80a7AD7Bc3F6f87`
+- Contract address: [`0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b`](https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b)
+- Deployment transaction: [`0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a`](https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a)
 - Live app: https://proofpilot-two.vercel.app
-- Live smoke test: passed
-- First AI review report: `report_1` stored for `submission_1` with total score `61`
+- Deployment state: `finalized`; post-deployment `list_campaigns(0, 1)` read returned `[]`
+- V7 end-to-end fixture: pending. This is intentionally not replaced by historical V6 records.
 - Deployment details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Product Screenshots
@@ -125,10 +130,10 @@ ProofPilot now includes a public browser dApp for Bradbury:
 - `/app`: product workspace overview.
 - `/app/campaigns`: list campaigns and open campaign detail pages.
 - `/app/campaigns/new`: create a campaign with wallet signing.
-- `/app/campaigns/campaign_1`: inspect the live campaign and its submissions/reports.
+- `/app/campaigns/[campaignId]`: inspect a V7 campaign and its submissions/reports after it is created.
 - `/app/submit`: submit project evidence as a builder.
-- `/app/submissions/submission_1`: inspect the reviewed live submission and owner-only review actions when eligible.
-- `/app/reports/report_1`: inspect the first stored review report and evidence snapshot.
+- `/app/submissions/[submissionId]`: inspect a stored submission and owner-only review actions when eligible.
+- `/app/reports/[reportId]`: inspect a stored review report and evidence snapshot.
 - `/app/builders`: inspect builder reputation profiles.
 - Legacy routes such as `/dashboard`, `/campaigns`, `/reports`, and `/builders` redirect into the `/app` shell.
 
@@ -138,13 +143,13 @@ Users sign write transactions with an EIP-1193 browser wallet, such as MetaMask-
 
 The public app includes a professional template picker for builder submissions:
 
-- `Web3 Project`: active on the current v6 contract. This template maps directly to `submit_project` with live app URL, GitHub repo URL, docs URL, deployed contract address, deployment transaction hash, reviewer feedback, and fixes explanation.
-- `Frontend App`: visible as a locked preview. It requires future flexible evidence support because v6 requires contract address and deployment transaction fields.
+- `Web3 Project`: active on V7. This template maps directly to `submit_project` with live app URL, GitHub repo URL, docs URL, deployed contract address, deployment transaction hash, reviewer feedback, and fixes explanation.
+- `Frontend App`: visible as a locked preview. It requires future flexible evidence support because V7 requires contract address and deployment transaction fields.
 - `AI Project`: visible as a locked preview. It requires future flexible evidence support for model/API docs, benchmarks, and evaluation notes.
 - `DAO Milestone`: visible as a locked preview. It requires future flexible evidence support for milestone docs, PR links, and deliverables checklists.
 - `Bug Bounty`: visible as a locked preview. It requires future flexible evidence support for reproduction steps, fix PRs, and verification notes.
 
-Locked templates do not show a submit button and do not ask users to enter fake Web3 proof fields. The current v6 contract accepts Web3 evidence only.
+Locked templates do not show a submit button and do not ask users to enter fake Web3 proof fields. V7 accepts Web3 evidence only.
 
 ## Wallet UX
 
@@ -174,9 +179,10 @@ To verify reports manually, read `get_report("report_1")`, `get_submission("subm
 
 - [Product Spec](docs/PRODUCT_SPEC.md): product goals, users, workflows, data models, statuses, and launch scope.
 - [Architecture](docs/ARCHITECTURE.md): system components, GenLayer contract responsibilities, evidence flow, storage model, and method design.
-- [Testing](docs/TESTING.md): documentation-level test strategy for contract logic, review JSON, adversarial evidence, and integration behavior.
+- [Testing](docs/TESTING.md): test strategy and scope.
+- [V7 release checklist](docs/V7_RELEASE_CHECKLIST.md): required deployment, evidence, and end-to-end checks before portal submission.
 - [Review Strategy](docs/REVIEW_STRATEGY.md): rubric design, scoring guidance, prompt safety, consensus expectations, and appeal handling.
 
 ## Current Repository Status
 
-This repository contains the deployed ProofPilot contract source, protocol documentation, and a read-only frontend preview for the Bradbury deployment.
+This repository contains the finalized V7 contract source, executable architecture checks, protocol documentation, and a browser frontend configured for the finalized V7 address. The historical V6 deployment remains documented separately and is not used as evidence of V7 workflow results.

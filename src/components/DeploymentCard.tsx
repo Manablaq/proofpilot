@@ -10,9 +10,7 @@ export function DeploymentCard() {
     ["Network", deployment.network],
     ["Contract", deployment.contractAddress],
     ["Deployment tx", deployment.deploymentTx],
-    ["Smoke test tx", deployment.smokeTestTx],
-    ["Run review tx", deployment.runReviewTx],
-    ["Validators", deployment.validatorAgreement],
+    ["V7 E2E state", deployment.smokeTestStatus],
   ];
 
   return (
@@ -20,10 +18,10 @@ export function DeploymentCard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-cyan-200">Live Deployment</p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Bradbury verified</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">Bradbury V7 finalized</h3>
         </div>
         <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-sm text-emerald-100">
-          Smoke test passed
+          End-to-end test pending
         </span>
       </div>
       <div className="mt-7 space-y-3">

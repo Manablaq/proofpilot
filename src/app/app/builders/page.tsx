@@ -11,7 +11,7 @@ export default function ProductBuildersPage() {
       <PageHeader
         eyebrow="Builders"
         title="Reputation profiles"
-        description="Address-bound profiles for reviewed builders. The live v6 builder profile is available now; future profiles appear after submissions and reviews."
+        description="Address-bound profiles for reviewed builders. V7 profiles appear after submissions and reviews are stored on the finalized contract."
       />
       <div className="grid gap-4 md:grid-cols-2">
         <SectionCard className="p-5">

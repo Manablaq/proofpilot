@@ -79,13 +79,10 @@ export function AppTransactions() {
       </SectionCard>
 
       <SectionCard className="mt-6 p-6">
-        <h2 className="text-2xl font-semibold text-white">Known final v6 transactions</h2>
+        <h2 className="text-2xl font-semibold text-white">Finalized V7 deployment</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {[
             ["Deployment", deployment.deploymentTx],
-            ["Campaign", deployment.smokeTestTx],
-            ["Submit", deployment.submitGenlayerTx],
-            ["Review", deployment.runReviewTx],
           ].map(([label, tx]) => (
             <a key={tx} href={`${deployment.explorerBase}/tx/${tx}`} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm transition hover:bg-white/[0.07]">
               <p className="text-slate-500">{label}</p>

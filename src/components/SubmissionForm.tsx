@@ -121,7 +121,7 @@ export function SubmissionForm({
       <div className="border-b border-white/10 p-6 sm:p-8">
         <h2 className="text-2xl font-semibold text-white">Web3 Project evidence</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Active on v6. The connected wallet becomes the builder address. Submitted URLs remain untrusted until reviewed by the contract.
+          Active on V7. The connected wallet becomes the builder address. Submitted URLs remain untrusted until reviewed by the contract.
         </p>
       </div>
       <div className="divide-y divide-white/10">
@@ -149,7 +149,7 @@ export function SubmissionForm({
           </div>
         </FormSection>
 
-        <FormSection title="On-chain proof" description="The v6 contract requires Web3 deployment proof fields. Do not enter placeholders.">
+        <FormSection title="On-chain proof" description="The V7 contract requires Web3 deployment proof fields. Do not enter placeholders.">
           <div className="grid gap-4 md:grid-cols-2">
             <Field name="contract_address" label="Contract address" value={values.contract_address} error={visibleErrors.contract_address} onChange={(value) => updateField("contract_address", value)} onBlur={() => touchField("contract_address")} />
             <Field name="deployment_tx_hash" label="Deployment tx hash" value={values.deployment_tx_hash} error={visibleErrors.deployment_tx_hash} onChange={(value) => updateField("deployment_tx_hash", value)} onBlur={() => touchField("deployment_tx_hash")} />

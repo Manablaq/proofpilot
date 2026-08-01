@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { GlassCard } from "@/components/GlassCard";
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { defaultRubric, validateRubric } from "@/lib/proofpilot-schema";
 
 export function CampaignForm({ address }: { address: string }) {
   const [values, setValues] = useState({
@@ -18,7 +19,8 @@ export function CampaignForm({ address }: { address: string }) {
   const errors = useMemo(() => ({
     title: values.title.trim() ? "" : "Title is required.",
     description: values.description.trim() ? "" : "Description is required.",
-  }), [values.title, values.description]);
+    custom_rubric_json: validateRubric(values.custom_rubric_json) ?? "",
+  }), [values.title, values.description, values.custom_rubric_json]);
   const invalid = Object.values(errors).some(Boolean);
 
   return (
@@ -54,8 +56,16 @@ export function CampaignForm({ address }: { address: string }) {
           </div>
         </FormSection>
 
-        <FormSection title="B. Review rubric" description="Optional JSON object for custom rubric metadata. Leave empty object for rubric_v1 defaults.">
+        <FormSection title="B. Review rubric" description="This is an executable 100-point rubric, not metadata. Leave {} for the audited default, or provide every category with whole-number weights totaling 100.">
           <JsonArea value={values.custom_rubric_json} onChange={(value) => setValues((current) => ({ ...current, custom_rubric_json: value }))} />
+          <button
+            type="button"
+            onClick={() => setValues((current) => ({ ...current, custom_rubric_json: JSON.stringify(defaultRubric, null, 2) }))}
+            className="mt-3 text-sm font-medium text-cyan-200 hover:text-cyan-100"
+          >
+            Use the audited 100-point default
+          </button>
+          {errors.custom_rubric_json ? <span className="mt-2 block text-sm text-amber-200">{errors.custom_rubric_json}</span> : null}
         </FormSection>
 
         <FormSection title="C. Submission requirements" description="Optional JSON object controlling required evidence fields.">
