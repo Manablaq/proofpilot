@@ -3,7 +3,7 @@
 import { deployment } from "@/lib/deployment";
 import type { ProofPilotWriteMethod } from "@/lib/proofpilot-schema";
 
-export type LocalTxStatus = "preparing" | "sent" | "confirmed" | "error";
+export type LocalTxStatus = "preparing" | "sent" | "evm_confirmed" | "state_pending" | "state_applied" | "error";
 
 export type LocalTxEntry = {
   id: string;
@@ -14,6 +14,8 @@ export type LocalTxEntry = {
   evmTx?: string;
   genlayerTx?: string;
   submissionId?: string;
+  campaignId?: string;
+  reportId?: string;
   status: LocalTxStatus;
   error?: string;
   createdAt: string;
@@ -57,7 +59,7 @@ export function createLocalTx(method: ProofPilotWriteMethod, from: string, chain
   return entry.id;
 }
 
-export function updateLocalTx(id: string, patch: Partial<Pick<LocalTxEntry, "evmTx" | "genlayerTx" | "submissionId" | "status" | "error" | "chainId">>) {
+export function updateLocalTx(id: string, patch: Partial<Pick<LocalTxEntry, "evmTx" | "genlayerTx" | "submissionId" | "campaignId" | "reportId" | "status" | "error" | "chainId">>) {
   const now = new Date().toISOString();
   writeAll(readAll().map((entry) => entry.id === id ? { ...entry, ...patch, updatedAt: now } : entry));
 }

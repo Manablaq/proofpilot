@@ -90,7 +90,7 @@ export function AppReportDetail({ reportId }: { reportId: string }) {
                     ["Campaign ID", report.campaign_id],
                     ["Builder", report.builder],
                     ["Snapshot", report.snapshot_id],
-                    ["Rubric", report.rubric_version],
+                    ["Rubric", "100-point executable rubric"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                       <p className="text-sm text-slate-500">{label}</p>

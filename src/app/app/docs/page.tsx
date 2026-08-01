@@ -10,16 +10,16 @@ export default function ProductDocsVerifyPage() {
       <PageHeader
         eyebrow="Docs / Verify"
         title="Verify ProofPilot output"
-        description="Use contract reads and public explorer links to verify finalized V7 deployment facts without relying on frontend claims."
+        description="Use contract reads and public explorer links to verify finalized deployment facts without relying on frontend claims."
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard className="p-6">
-          <h2 className="text-2xl font-semibold text-white">Finalized V7 identifiers</h2>
+          <h2 className="text-2xl font-semibold text-white">Finalized deployment identifiers</h2>
           <div className="mt-5 space-y-3">
             {[
               ["Contract", deployment.contractAddress],
               ["Deployment transaction", deployment.deploymentTx],
-              ["V7 workflow fixture", "Pending — no campaign, submission, or report is asserted yet"],
+              ["Workflow fixture", "Pending — no campaign, submission, or report is asserted yet"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-sm text-slate-500">{label}</p>
@@ -33,7 +33,7 @@ export default function ProductDocsVerifyPage() {
           <div className="mt-5 space-y-3">
             {[
               "Open the Bradbury deployment transaction and confirm FINALIZED / accepted.",
-              "Read list_campaigns(0, 1) and confirm the clean V7 state before creating a fixture.",
+              "Read list_campaigns(0, 1) and confirm the clean state before creating a fixture.",
               "Create a campaign with an exact 100-point custom rubric.",
               "After the workflow is run, inspect the stored submission, report, snapshot, and the review transaction.",
             ].map((item) => (
@@ -48,7 +48,7 @@ export default function ProductDocsVerifyPage() {
       <SectionCard className="mt-6 p-6">
         <h2 className="text-2xl font-semibold text-white">Open resources</h2>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Link href="/app/campaigns/new" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100">Create V7 campaign</Link>
+          <Link href="/app/campaigns/new" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100">Create campaign</Link>
           <a href={deployment.explorerContract} target="_blank" rel="noreferrer" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Explorer contract</a>
           <a href={deployment.explorerTx} target="_blank" rel="noreferrer" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Deployment transaction</a>
         </div>

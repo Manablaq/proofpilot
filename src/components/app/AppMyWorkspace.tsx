@@ -112,6 +112,12 @@ export function AppMyWorkspace() {
   }, [scheduleReload, walletReadAddress]);
 
   useEffect(() => {
+    if (!walletReadAddress) return;
+    const interval = window.setInterval(() => scheduleReload("poll"), 10_000);
+    return () => window.clearInterval(interval);
+  }, [scheduleReload, walletReadAddress]);
+
+  useEffect(() => {
     if (!walletReadAddress) {
       setState((current) => ({ ...current, loading: false, localTxs: [] }));
       return;

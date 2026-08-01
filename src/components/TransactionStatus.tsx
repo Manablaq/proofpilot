@@ -11,11 +11,11 @@ import { CopyButton } from "@/components/CopyButton";
 import { useWallet } from "@/components/WalletProvider";
 
 type TxState = {
-  phase: "idle" | "preparing" | "wallet" | "sent" | "receipt" | "syncing" | "confirmed" | "error";
+  phase: "idle" | "preparing" | "wallet" | "sent" | "receipt" | "syncing" | "applied" | "error";
   evmTx: string;
   genlayerTx: string;
   submissionId: string;
-  indexingTimedOut: boolean;
+  stillSyncing: boolean;
   error: string;
 };
 
@@ -24,7 +24,7 @@ const initialState: TxState = {
   evmTx: "",
   genlayerTx: "",
   submissionId: "",
-  indexingTimedOut: false,
+  stillSyncing: false,
   error: "",
 };
 
@@ -62,7 +62,7 @@ export function TransactionStatus({
     if (lastValues.current !== valueSignature) {
       lastValues.current = valueSignature;
       setFormVersion((version) => version + 1);
-      if (state.phase === "confirmed") {
+      if (state.phase === "applied") {
         setState(initialState);
       }
     }
@@ -87,19 +87,21 @@ export function TransactionStatus({
 
   async function waitForSubmissionId(builder: string, beforeIds: string[]) {
     const before = new Set(beforeIds);
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    // Contract reads are the source of truth. Keep polling while this component
+    // is open instead of telling a user to refresh after an accepted transaction.
+    for (let attempt = 0; attempt < 150; attempt += 1) {
       const ids = await readBuilderSubmissionIds(builder);
       const detected = newestSubmissionId(ids, before);
       if (detected) {
         return detected;
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, attempt < 20 ? 3000 : 8000));
     }
     return "";
   }
 
   async function checkDelayedSubmission() {
-    if (!address || method !== "submit_project" || !state.indexingTimedOut) {
+    if (!address || method !== "submit_project" || !state.stillSyncing) {
       return;
     }
     const submissionId = await waitForSubmissionId(address, beforeSubmissionIdsRef.current);
@@ -109,7 +111,7 @@ export function TransactionStatus({
     if (localTxIdRef.current) {
       updateLocalTx(localTxIdRef.current, { submissionId });
     }
-    setState((current) => ({ ...current, submissionId, indexingTimedOut: false }));
+    setState((current) => ({ ...current, phase: "applied", submissionId, stillSyncing: false }));
     notifyProofPilotMutation({
       method,
       address,
@@ -118,10 +120,11 @@ export function TransactionStatus({
       genlayerTx: confirmedTxRef.current.genlayerTx,
       submissionId,
     });
+    onConfirmed?.({ evmTx: confirmedTxRef.current.evmTx, genlayerTx: confirmedTxRef.current.genlayerTx, submissionId });
   }
 
   useEffect(() => {
-    if (!state.indexingTimedOut) {
+    if (!state.stillSyncing) {
       return;
     }
     const onFocus = () => {
@@ -138,10 +141,10 @@ export function TransactionStatus({
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [state.indexingTimedOut]);
+  }, [state.stillSyncing]);
 
   async function submit() {
-    if (["preparing", "wallet", "sent", "receipt"].includes(state.phase) || state.phase === "confirmed") {
+    if (["preparing", "wallet", "sent", "receipt", "syncing"].includes(state.phase) || state.phase === "applied") {
       return;
     }
 
@@ -183,17 +186,22 @@ export function TransactionStatus({
       const receipt = await waitForEvmReceipt(evmTx);
       const genlayerTx = extractGenLayerTxId(receipt) ?? "";
       confirmedTxRef.current = { evmTx, genlayerTx };
-      updateLocalTx(localTxId, { evmTx, genlayerTx, status: "confirmed" });
+      updateLocalTx(localTxId, { evmTx, genlayerTx, status: "evm_confirmed" });
 
       setState((prev) => ({ ...prev, phase: "syncing", evmTx, genlayerTx }));
       const submissionId = method === "submit_project" ? await waitForSubmissionId(address, beforeSubmissionIds) : "";
       if (submissionId) {
-        updateLocalTx(localTxId, { submissionId });
+        updateLocalTx(localTxId, { submissionId, status: "state_applied" });
+      } else if (method === "submit_project") {
+        updateLocalTx(localTxId, { status: "state_pending" });
       }
 
-      setState({ phase: "confirmed", evmTx, genlayerTx, submissionId, indexingTimedOut: method === "submit_project" && !submissionId, error: "" });
+      const stateApplied = method !== "submit_project" || Boolean(submissionId);
+      setState({ phase: stateApplied ? "applied" : "syncing", evmTx, genlayerTx, submissionId, stillSyncing: method === "submit_project" && !submissionId, error: "" });
       notifyProofPilotMutation({ method, address, from: address, evmTx, genlayerTx, submissionId });
-      onConfirmed?.({ evmTx, genlayerTx, submissionId });
+      if (stateApplied) {
+        onConfirmed?.({ evmTx, genlayerTx, submissionId });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Transaction failed";
       const readable = /reject|denied|user rejected|user denied|4001/i.test(message) ? "Wallet signature was rejected or cancelled." : message;
@@ -212,19 +220,19 @@ export function TransactionStatus({
   }
 
   const busy = ["preparing", "wallet", "sent", "receipt", "syncing"].includes(state.phase);
-  const locked = busy || state.phase === "confirmed";
-  const confirmedLabel = method === "submit_project" ? "Submission confirmed" : "Transaction confirmed";
+  const locked = busy || state.phase === "applied";
+  const appliedLabel = method === "submit_project" ? "Submission recorded on-chain" : "Transaction recorded on-chain";
   const phaseText = {
     idle: buttonLabel,
     preparing: "Preparing wallet transaction",
     wallet: "Waiting for wallet signature",
     sent: "Transaction sent",
     receipt: "Waiting for Bradbury confirmation",
-    syncing: "Syncing latest Bradbury state",
-    confirmed: confirmedLabel,
+    syncing: "Waiting for on-chain state",
+    applied: appliedLabel,
     error: "Retry transaction",
   }[state.phase];
-  const canReset = state.phase === "confirmed";
+  const canReset = state.phase === "applied";
 
   return (
     <div className="space-y-4">
@@ -245,12 +253,12 @@ export function TransactionStatus({
       {state.phase !== "idle" ? (
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm">
           <p className="font-semibold text-slate-100">
-            {state.phase === "confirmed" ? confirmedLabel : state.phase === "error" ? "Transaction failed" : phaseText}
+            {state.phase === "applied" ? appliedLabel : state.phase === "error" ? "Transaction failed" : phaseText}
           </p>
           {state.phase === "preparing" ? <p className="mt-2 text-slate-400">Encoding GenLayer calldata. Your wallet will not open if preparation fails.</p> : null}
           {state.phase === "wallet" ? <p className="mt-2 text-slate-400">Review the request in your wallet. Rejecting it will not send a transaction.</p> : null}
           {state.phase === "receipt" ? <p className="mt-2 text-slate-400">The EVM transaction was sent. Waiting for Bradbury receipt and contract reads.</p> : null}
-          {state.phase === "syncing" ? <p className="mt-2 text-slate-400">Transaction confirmed. Reading Bradbury state so this workspace can update automatically.</p> : null}
+          {state.phase === "syncing" ? <p className="mt-2 text-slate-400">The wallet transaction has an EVM receipt. ProofPilot is checking the contract automatically until the new record is readable.</p> : null}
           {state.evmTx ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-slate-300">
               <span>EVM tx: {shortHash(state.evmTx)}</span>
@@ -268,9 +276,9 @@ export function TransactionStatus({
                 Trace
               </a>
             </div>
-          ) : state.phase === "confirmed" ? (
+          ) : state.phase === "applied" || state.phase === "syncing" ? (
             <p className="mt-3 text-amber-100">
-              EVM receipt was found, but no GenLayer transaction id was decoded from logs. Use the EVM explorer link while consensus indexing catches up.
+              An EVM receipt was found, but no GenLayer transaction ID was decoded from its logs. The app will continue reconciling the on-chain record automatically.
             </p>
           ) : null}
           {state.submissionId ? (
@@ -281,10 +289,6 @@ export function TransactionStatus({
                 <a className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10" href="/app/me">Open workspace</a>
               </div>
             </div>
-          ) : state.indexingTimedOut ? (
-            <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/10 p-3 text-amber-100">
-              Transaction confirmed. Bradbury reads may take longer. This page will keep checking when you return or open the workspace.
-            </p>
           ) : null}
           {state.error ? <p className="mt-3 text-amber-200">{state.error}</p> : null}
         </div>

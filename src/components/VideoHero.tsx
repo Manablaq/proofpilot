@@ -48,7 +48,7 @@ export function VideoHero() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="max-w-5xl"
           >
-            <StatusPill>Bradbury V7 · finalized</StatusPill>
+            <StatusPill>Bradbury · finalized</StatusPill>
             <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-tight text-white sm:text-6xl lg:text-7xl">
               AI consensus review for the builder economy.
             </h1>

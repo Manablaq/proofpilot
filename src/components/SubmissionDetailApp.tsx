@@ -101,7 +101,7 @@ export function SubmissionDetailApp({ submissionId }: { submissionId: string }) 
 
       {submissionId === deployment.submissionId ? null : (
         <p className="mt-8 text-sm text-slate-500">
-          Live v6 reference submission is {deployment.submissionId}; this page supports future submission IDs returned by the contract.
+          This page renders submission IDs returned by the contract and does not rely on seeded reference data.
         </p>
       )}
     </section>

@@ -116,12 +116,29 @@ export function SubmissionForm({
     }
   }, []);
 
+  function clearAfterRecorded() {
+    setValues({
+      campaign_id: preserveCampaignId ? campaignId : "",
+      project_name: "",
+      summary: "",
+      live_app_url: "",
+      github_repo_url: "",
+      docs_url: "",
+      contract_address: "",
+      deployment_tx_hash: "",
+      reviewer_feedback_text: "",
+      fixes_explanation: "",
+    });
+    setTouched({});
+    setSubmitted(false);
+  }
+
   return (
     <GlassCard className="overflow-hidden p-0">
       <div className="border-b border-white/10 p-6 sm:p-8">
         <h2 className="text-2xl font-semibold text-white">Web3 Project evidence</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Active on V7. The connected wallet becomes the builder address. Submitted URLs remain untrusted until reviewed by the contract.
+          The connected wallet becomes the builder address. Submitted URLs remain untrusted until the contract records an independent review.
         </p>
       </div>
       <div className="divide-y divide-white/10">
@@ -149,7 +166,7 @@ export function SubmissionForm({
           </div>
         </FormSection>
 
-        <FormSection title="On-chain proof" description="The V7 contract requires Web3 deployment proof fields. Do not enter placeholders.">
+        <FormSection title="On-chain proof" description="Provide verifiable deployment fields. Do not enter placeholders.">
           <div className="grid gap-4 md:grid-cols-2">
             <Field name="contract_address" label="Contract address" value={values.contract_address} error={visibleErrors.contract_address} onChange={(value) => updateField("contract_address", value)} onBlur={() => touchField("contract_address")} />
             <Field name="deployment_tx_hash" label="Deployment tx hash" value={values.deployment_tx_hash} error={visibleErrors.deployment_tx_hash} onChange={(value) => updateField("deployment_tx_hash", value)} onBlur={() => touchField("deployment_tx_hash")} />
@@ -214,6 +231,7 @@ export function SubmissionForm({
             values={values}
             gasLimit={gasLimit}
             buttonLabel="Submit project"
+            onConfirmed={clearAfterRecorded}
           />
         )}
       </div>

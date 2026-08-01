@@ -10,7 +10,8 @@
     "test": "node --test tests/*.test.mjs",
     "check:contract": "PYTHONPYCACHEPREFIX=/private/tmp/proofpilot-pycache python3 -m py_compile contracts/proofpilot.py",
     "check:schema": "node scripts/check-proofpilot-schema.mjs",
-    "deploy:v7": "node scripts/deploy-proofpilot-v7.mjs"
+    "deploy:v7": "node scripts/deploy-proofpilot-v7.mjs",
+    "deploy:v8": "node scripts/deploy-proofpilot-v8.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.23.6",

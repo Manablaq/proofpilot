@@ -2,7 +2,7 @@
 
 AI consensus review for the builder economy.
 
-> **Release status — V7 deployed and finalized on Bradbury:** [contract `0x3764…841b`](https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b) was finalized from [deployment `0xe082…373a`](https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a). V7 replaces the historical V6 release for new use. Its end-to-end campaign, evidence, and review fixture is still required before describing the project as portal-submission-ready; see [`docs/V7_RELEASE_CHECKLIST.md`](docs/V7_RELEASE_CHECKLIST.md).
+> **Release status — V8 candidate ready for Bradbury deployment:** V7 is finalized at [contract `0x3764…841b`](https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b), but its public review fixture exposed an AI-narrative normalization failure. V8 repairs that consensus defect and must be deployed as a clean contract before the project is represented as portal-submission-ready. See [`docs/V8_RELEASE_CHECKLIST.md`](docs/V8_RELEASE_CHECKLIST.md).
 
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 
@@ -81,8 +81,8 @@ Recommendations:
 ProofPilot documentation assumes these GenLayer-specific constraints:
 
 - Raw URLs must not be placed into LLM prompts with the expectation that validators will browse them.
-- Contract web access must use GenLayer web access functions. The V7 review path uses `gl.nondet.web.get` and does not use `gl.nondet.web.render`.
-- The V7 review path uses bounded leader-side AI review with validator-side independent evidence fetches and review reproduction through `gl.vm.run_nondet_unsafe`.
+- Contract web access must use GenLayer web access functions. The current review path uses `gl.nondet.web.get` and does not use `gl.nondet.web.render`.
+- The current review path uses bounded leader-side AI review with validator-side independent evidence fetches and review reproduction through `gl.vm.run_nondet_unsafe`.
 - Fetched web content must be treated as untrusted evidence.
 - Review prompts must defend against prompt injection from fetched webpages, README files, docs, and app pages.
 - Review output must be strict JSON.

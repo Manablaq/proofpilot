@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { deployment } from "@/lib/deployment";
+import { subscribeProofPilotMutation } from "@/lib/live-refresh";
 import type { ReviewReport } from "@/lib/proofpilot-schema";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
@@ -18,15 +18,19 @@ export function AppReports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
-        const res = await fetch(`/api/reports?campaignId=${deployment.campaignId}&limit=100`, { cache: "no-store" });
-        const json = await res.json();
-        if (!json.ok) {
-          throw new Error(json.error || "Reports unavailable");
-        }
-        const nextIds = Array.isArray(json.data) ? json.data : [];
+        setError("");
+        const campaignsRes = await fetch("/api/campaigns", { cache: "no-store" });
+        const campaignsJson = await campaignsRes.json();
+        if (!campaignsRes.ok || !campaignsJson.ok) throw new Error(campaignsJson.error || "Campaign list unavailable");
+        const campaignIds = Array.isArray(campaignsJson.data) ? campaignsJson.data.filter((id: unknown): id is string => typeof id === "string") : [];
+        const reportLists = await Promise.all(campaignIds.map(async (campaignId: string) => {
+          const res = await fetch(`/api/reports?campaignId=${encodeURIComponent(campaignId)}&limit=100`, { cache: "no-store" });
+          const json = await res.json();
+          return res.ok && json.ok && Array.isArray(json.data) ? json.data : [];
+        }));
+        const nextIds = [...new Set(reportLists.flat().filter((id): id is string => typeof id === "string"))];
         setIds(nextIds);
         const loaded = await Promise.all(nextIds.map(async (id: string) => {
           const reportRes = await fetch(`/api/reports/${id}`, { cache: "no-store" });
@@ -39,9 +43,14 @@ export function AppReports() {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, []);
+
+  useEffect(() => {
+    void load();
+    const unsubscribe = subscribeProofPilotMutation(() => void load());
+    const interval = window.setInterval(() => void load(), 10_000);
+    return () => { unsubscribe(); window.clearInterval(interval); };
+  }, [load]);
 
   const filtered = useMemo(() => reports.filter((report) => {
     const text = `${report.report_id} ${report.submission_id} ${report.campaign_id} ${report.status}`.toLowerCase();

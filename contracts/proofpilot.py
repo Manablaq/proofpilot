@@ -5,7 +5,7 @@ from genlayer import *
 from dataclasses import dataclass
 import json
 
-# ProofPilot v7 candidate. Deploy as a new contract; historical v6 remains separate.
+# ProofPilot v8 candidate. Deploy as a new contract; historical deployments remain separate.
 
 
 DRAFT = "DRAFT"
@@ -52,7 +52,7 @@ CONFIDENCE_LEVELS = [LOW, MEDIUM, HIGH]
 HUMAN_STATUSES = [PENDING, APPROVED, CHANGES_REQUESTED, REJECTED, OVERRIDDEN]
 APPEAL_STATUSES = [OPEN, RECHECK_SCHEDULED, ACCEPTED, REJECTED, CLOSED]
 
-RUBRIC_VERSION = "rubric_v2"
+RUBRIC_VERSION = "rubric_v3"
 RUBRIC = {
     "live_app_availability": 15,
     "github_repository_availability": 10,
@@ -315,7 +315,8 @@ ENUMS:{pp_j(enums)}
 META:{pp_j(meta)}
 FACTS:{pp_j(facts)}
 SCHEMA:{pp_j(schema)}
-Return one JSON object. Include FACTS.fetch_failures in fetch_failures or missing_evidence. Contract/tx are metadata only; do not give full proof points."""
+Return one JSON object. Include FACTS.fetch_failures in fetch_failures or missing_evidence. Contract/tx are metadata only; do not give full proof points.
+Every item in findings, risks, missing_evidence, and fetch_failures must be plain text no longer than 120 characters. Return at most 3 findings, 3 risks, and 5 items in either remaining list."""
 
 
 def pp_ai(prompt: str):
@@ -323,14 +324,21 @@ def pp_ai(prompt: str):
 
 
 def pp_short_list(v, n: int) -> list:
-    if not isinstance(v, list) or len(v) > n:
-        raise gl.vm.UserError("review list")
+    """Normalize narrative output instead of aborting a consensus round over prose length.
+
+    LLM prose is non-deterministic. These fields are explanatory only: rubric values,
+    evidence facts, and the final status remain separately validated below. Keeping the
+    text bounded makes the stored report safe without turning a valid review into a
+    UserError merely because a validator used a longer sentence.
+    """
+    if not isinstance(v, list):
+        return []
     out = []
-    for x in v:
+    for x in v[:n]:
         s = pp_j(x) if isinstance(x, dict) else str(x)
-        if len(s) > 140:
-            raise gl.vm.UserError("review item")
-        out.append(s)
+        s = " ".join(s.split())[:140]
+        if s:
+            out.append(s)
     return out
 
 

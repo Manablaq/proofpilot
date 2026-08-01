@@ -8,9 +8,9 @@ import { UseCases } from "@/components/UseCases";
 import { VideoHero } from "@/components/VideoHero";
 
 const trust = [
-  "V7 finalized on GenLayer Bradbury",
+  "Finalized on GenLayer Bradbury",
   "Public contract schema verified",
-  "Clean V7 state",
+  "Clean on-chain state",
   "End-to-end fixture in progress",
 ];
 
@@ -110,12 +110,12 @@ export default function Home() {
               Live on Bradbury
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-white sm:text-5xl">
-              Finalized and ready for V7 workflow validation.
+              Finalized and ready for workflow validation.
             </h2>
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              The ProofPilot V7 contract is finalized and readable on GenLayer Bradbury.
+              The ProofPilot contract is finalized and readable on GenLayer Bradbury.
               Its clean state is deliberate: the next release gate is a real campaign,
-              evidence submission, and independent validator review—not a recycled V6 result.
+              evidence submission, and independent validator review—not a recycled legacy result.
             </p>
           </div>
           <DeploymentCard />

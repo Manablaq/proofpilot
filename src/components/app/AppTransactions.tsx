@@ -8,24 +8,20 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { CopyButton } from "@/components/CopyButton";
 import { deployment } from "@/lib/deployment";
 import { shortHash } from "@/lib/proofpilot-schema";
+import { getLocalTxHistory, type LocalTxEntry } from "@/lib/tx-history";
+import { subscribeProofPilotMutation } from "@/lib/live-refresh";
 
-type HistoryItem = {
-  method: string;
-  evmTx: string;
-  genlayerTx: string;
-  createdAt: string;
-};
+type HistoryItem = LocalTxEntry;
 
 export function AppTransactions() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem("proofpilot_tx_history") || "[]");
-      setHistory(Array.isArray(parsed) ? parsed as HistoryItem[] : []);
-    } catch {
-      setHistory([]);
-    }
+    const load = () => setHistory(getLocalTxHistory() as HistoryItem[]);
+    load();
+    const unsubscribe = subscribeProofPilotMutation(load);
+    const interval = window.setInterval(load, 10_000);
+    return () => { unsubscribe(); window.clearInterval(interval); };
   }, []);
 
   return (
@@ -59,19 +55,18 @@ export function AppTransactions() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="font-semibold text-white">{item.method}</p>
-                  <p className="mt-1 text-xs text-slate-500">{item.createdAt}</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.createdAt} · {item.status.replaceAll("_", " ")}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 text-sm text-slate-300">
-                  <span>EVM {shortHash(item.evmTx)}</span>
-                  <CopyButton value={item.evmTx} />
-                  {item.genlayerTx ? <span>GenLayer {shortHash(item.genlayerTx)}</span> : <span>GenLayer tx pending/manual</span>}
+                  {item.evmTx ? <><span>EVM {shortHash(item.evmTx)}</span><CopyButton value={item.evmTx} /></> : <span>Wallet transaction pending</span>}
+                  {item.genlayerTx ? <span>GenLayer {shortHash(item.genlayerTx)}</span> : <span>Contract state is reconciled automatically</span>}
                 </div>
               </div>
             </div>
           )) : (
             <EmptyState
               title="No local transaction history"
-              description="When you create campaigns, submit projects, or run reviews from this browser, confirmed EVM receipts will appear here."
+              description="When you create campaigns, submit projects, or run reviews from this browser, their lifecycle appears here and updates automatically."
               action={{ label: "Submit project", href: "/app/submit" }}
             />
           )}
@@ -79,7 +74,7 @@ export function AppTransactions() {
       </SectionCard>
 
       <SectionCard className="mt-6 p-6">
-        <h2 className="text-2xl font-semibold text-white">Finalized V7 deployment</h2>
+        <h2 className="text-2xl font-semibold text-white">Finalized deployment</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {[
             ["Deployment", deployment.deploymentTx],

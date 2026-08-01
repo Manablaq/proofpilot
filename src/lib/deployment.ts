@@ -1,5 +1,4 @@
 export const deployment = {
-  release: "v7",
   contractAddress: "0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b",
   deploymentTx:
     "0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a",
@@ -15,18 +14,18 @@ export const deployment = {
   githubRepo: "https://github.com/Manablaq/proofpilot",
   rpc: "https://rpc-bradbury.genlayer.com",
   network: "GenLayer Bradbury",
-  smokeTestStatus: "V7_E2E_PENDING",
+  smokeTestStatus: "WORKFLOW_VERIFICATION_PENDING",
   validatorAgreement: "Not yet applicable",
   campaignId: "",
-  campaignTitle: "No V7 campaign yet",
-  campaignStatus: "PENDING_V7_E2E",
+  campaignTitle: "No campaign selected",
+  campaignStatus: "WORKFLOW_VERIFICATION_PENDING",
   builderAddress: "",
   submissionId: "",
   reportId: "",
   snapshotId: "",
   reviewScore: 0,
-  reviewStatus: "PENDING_V7_E2E",
-  reviewRecommendation: "PENDING_V7_E2E",
+  reviewStatus: "WORKFLOW_VERIFICATION_PENDING",
+  reviewRecommendation: "WORKFLOW_VERIFICATION_PENDING",
 } as const;
 
 export const navItems = [

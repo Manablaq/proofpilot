@@ -94,8 +94,8 @@ export function DashboardPreview() {
 
   const metrics = useMemo(
     () => [
-      ["Campaigns", String(campaigns.data?.length ?? 1), liveConnected ? "Live Bradbury read" : "Live v6 default"],
-      ["Submissions", "1", `${deployment.submissionId} live on v6`],
+      ["Campaigns", String(campaigns.data?.length ?? 0), liveConnected ? "Live Bradbury read" : "Awaiting live read"],
+      ["Submissions", "—", "Read from the connected campaign"],
       ["Reviews", "1", `${deployment.reportId} scored ${deployment.reviewScore}/100`],
       ["Appeals", "0", "No appeals opened"],
       ["Builder Profiles", "1", "Profile updated after first review"],

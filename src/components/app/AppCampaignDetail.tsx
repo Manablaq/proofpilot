@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Campaign } from "@/lib/proofpilot-schema";
 import { deployment } from "@/lib/deployment";
+import { subscribeProofPilotMutation } from "@/lib/live-refresh";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { StatusBadge, statusTone } from "@/components/app/StatusBadge";
@@ -18,9 +19,9 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
+        setError("");
         const [campaignRes, submissionsRes, reportsRes] = await Promise.all([
           fetch(`/api/campaigns/${campaignId}`, { cache: "no-store" }),
           fetch(`/api/submissions?campaignId=${encodeURIComponent(campaignId)}&limit=50`, { cache: "no-store" }),
@@ -42,9 +43,17 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, [campaignId]);
+
+  useEffect(() => {
+    void load();
+    const unsubscribe = subscribeProofPilotMutation(() => void load());
+    const interval = window.setInterval(() => void load(), 8000);
+    return () => {
+      unsubscribe();
+      window.clearInterval(interval);
+    };
+  }, [load]);
 
   return (
     <div>
@@ -94,7 +103,6 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
                 {submissions.length ? submissions.map((id) => (
                   <Link key={id} href={`/app/submissions/${id}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.07]">
                     <span className="font-medium text-white">{id}</span>
-                    {id === deployment.submissionId ? <StatusBadge tone="success">Live reviewed case</StatusBadge> : null}
                   </Link>
                 )) : <EmptyState title="No submissions yet" description="Builder submissions will appear here after wallet-signed submit_project transactions." action={{ label: "Submit project", href: `/app/submit?campaignId=${campaignId}` }} />}
               </div>
@@ -106,7 +114,6 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
                 {reports.length ? reports.map((id) => (
                   <Link key={id} href={`/app/reports/${id}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] p-4 transition hover:bg-white/[0.07]">
                     <span className="font-medium text-white">{id}</span>
-                    {id === deployment.reportId ? <StatusBadge tone="warning">Score {deployment.reviewScore}</StatusBadge> : null}
                   </Link>
                 )) : <EmptyState title="No reports yet" description="Reports appear after an eligible submission is reviewed." />}
               </div>
@@ -117,7 +124,7 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
             <h2 className="text-2xl font-semibold text-white">Settings / Policy</h2>
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
               {[
-                ["Rubric", "rubric_v1"],
+                ["Rubric", "100-point executable rubric"],
                 ["Review trigger", "Campaign owner"],
                 ["Contract behavior", "Append-only reports and snapshots"],
               ].map(([label, value]) => (
@@ -134,7 +141,7 @@ export function AppCampaignDetail({ campaignId }: { campaignId: string }) {
             <p className="mt-2 text-sm text-slate-400">ProofPilot contract and live Bradbury deployment anchors.</p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a href={deployment.explorerContract} target="_blank" rel="noreferrer" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100">Open contract</a>
-              <a href={`${deployment.explorerBase}/tx/${deployment.runReviewTx}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Open review tx</a>
+              <button type="button" onClick={() => void load()} className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Refresh on-chain state</button>
             </div>
           </SectionCard>
         </div>

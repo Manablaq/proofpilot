@@ -13,7 +13,7 @@ const templates = [
     id: "web3",
     title: "Web3 Project",
     audience: "Smart contract apps, deployed protocols, and Web3 builder submissions.",
-    status: "Active on V7",
+    status: "Active",
     active: true,
     evidence: ["Project name", "Summary", "Live app URL", "GitHub repo URL", "Docs / README URL", "Contract address", "Deployment transaction hash", "Reviewer feedback", "Fixes explanation"],
   },
@@ -84,10 +84,10 @@ export function AppSubmitProject({ campaignId, preserveCampaignId = false }: { c
           <div>
             <h2 className="text-2xl font-semibold text-white">Choose submission template</h2>
             <p className="mt-2 text-sm text-slate-400">
-              The current V7 contract supports the Web3 Project evidence shape. Other templates need flexible evidence support.
+              The current contract supports the Web3 Project evidence shape. Other templates need flexible evidence support.
             </p>
           </div>
-          <StatusBadge tone="info">V7 evidence schema</StatusBadge>
+          <StatusBadge tone="info">Web3 evidence schema</StatusBadge>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-5">
           {templates.map((template) => (
@@ -138,7 +138,7 @@ function LockedTemplatePreview({
           <StatusBadge tone="neutral">Flexible evidence contract required</StatusBadge>
           <h2 className="mt-4 text-2xl font-semibold text-white">{template.title}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            This template needs ProofPilot flexible evidence support. The current V7 contract accepts Web3 evidence only,
+            This template needs ProofPilot flexible evidence support. The current contract accepts Web3 evidence only,
             including contract address and deployment transaction proof. ProofPilot will not ask you to enter fake
             Web3 fields for this template.
           </p>
