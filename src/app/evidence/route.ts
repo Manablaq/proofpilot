@@ -9,7 +9,7 @@ export const dynamic = "force-static";
 export function GET() {
   return new Response(
     [
-      "ProofPilot public evidence v1.",
+      "ProofPilot public evidence.",
       "ProofPilot is a GenLayer application for AI consensus review of builder project evidence.",
       "The live product lets campaign owners and builders create campaigns, submit public evidence, and inspect immutable review reports.",
       "Public app: https://proofpilot-two.vercel.app",
