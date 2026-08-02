@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { Campaign, Submission } from "@/lib/proofpilot-schema";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -10,6 +10,7 @@ import { LoadingState } from "@/components/app/LoadingState";
 import { CopyButton } from "@/components/CopyButton";
 import { WalletPanel } from "@/components/WalletPanel";
 import { RunReviewPanel } from "@/components/RunReviewPanel";
+import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
 
 export function AppSubmissionDetail({ submissionId }: { submissionId: string }) {
   const [address, setAddress] = useState("");
@@ -18,8 +19,7 @@ export function AppSubmissionDetail({ submissionId }: { submissionId: string }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
         const res = await fetch(`/api/submissions/${submissionId}`, { cache: "no-store" });
         const json = await res.json();
@@ -38,9 +38,9 @@ export function AppSubmissionDetail({ submissionId }: { submissionId: string }) 
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, [submissionId]);
+
+  useProofPilotAutoRefresh(load);
 
   const reviewed = submission?.status === "REVIEWED" && submission.latest_report_id;
   const reviewable = submission && ["SUBMITTED", "RECHECK_REQUESTED"].includes(submission.status);

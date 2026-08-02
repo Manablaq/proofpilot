@@ -7,6 +7,7 @@ import { isHex, isUrl } from "@/lib/proofpilot-schema";
 import { GlassCard } from "@/components/GlassCard";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { StatusBadge, statusTone } from "@/components/app/StatusBadge";
+import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
 
 const fields = [
   ["campaign_id", "Target campaign", "text", true],
@@ -254,10 +255,7 @@ function CampaignSelector({
   const [loading, setLoading] = useState(true);
   const [readError, setReadError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadCampaigns() {
+  const loadCampaigns = useCallback(async () => {
       try {
         const listRes = await fetch("/api/campaigns", { cache: "no-store" });
         const listJson = await listRes.json();
@@ -277,29 +275,17 @@ function CampaignSelector({
           }),
         );
 
-        if (!active) {
-          return;
-        }
-
         const loaded = details.filter((campaign): campaign is Campaign => Boolean(campaign));
         setCampaigns(loaded);
         setReadError("");
       } catch (error) {
-        if (active) {
-          setReadError(error instanceof Error ? error.message : "Campaigns unavailable");
-        }
+        setReadError(error instanceof Error ? error.message : "Campaigns unavailable");
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    }
-
-    loadCampaigns();
-    return () => {
-      active = false;
-    };
   }, []);
+
+  useProofPilotAutoRefresh(loadCampaigns);
 
   useEffect(() => {
     if (preserveSelectedCampaign || !campaigns.length || campaigns.some((campaign) => campaign.campaign_id === value)) {

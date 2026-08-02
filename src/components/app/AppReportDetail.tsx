@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import type { EvidenceSnapshot, ReviewReport } from "@/lib/proofpilot-schema";
 import { parseJsonField } from "@/lib/proofpilot-schema";
@@ -10,6 +10,7 @@ import { StatusBadge, statusTone } from "@/components/app/StatusBadge";
 import { LoadingState } from "@/components/app/LoadingState";
 import { EmptyState } from "@/components/app/EmptyState";
 import { CopyButton } from "@/components/CopyButton";
+import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
 
 export function AppReportDetail({ reportId }: { reportId: string }) {
   const [report, setReport] = useState<ReviewReport | null>(null);
@@ -17,8 +18,7 @@ export function AppReportDetail({ reportId }: { reportId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
         const res = await fetch(`/api/reports/${reportId}`, { cache: "no-store" });
         const json = await res.json();
@@ -37,9 +37,9 @@ export function AppReportDetail({ reportId }: { reportId: string }) {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, [reportId]);
+
+  useProofPilotAutoRefresh(load);
 
   const scores = useMemo(() => parseJsonField<Record<string, number>>(report?.scores_json, {}), [report]);
   const findings = useMemo(() => parseJsonField<string[]>(report?.findings_json, []), [report]);

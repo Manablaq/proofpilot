@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Campaign } from "@/lib/proofpilot-schema";
 import { deployment } from "@/lib/deployment";
@@ -9,6 +9,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { StatusBadge, statusTone } from "@/components/app/StatusBadge";
 import { EmptyState } from "@/components/app/EmptyState";
 import { LoadingState } from "@/components/app/LoadingState";
+import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
 
 export function AppCampaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -17,8 +18,7 @@ export function AppCampaigns() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
         const listRes = await fetch("/api/campaigns", { cache: "no-store" });
         const listJson = await listRes.json();
@@ -37,9 +37,9 @@ export function AppCampaigns() {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, []);
+
+  useProofPilotAutoRefresh(load);
 
   const filtered = useMemo(() => campaigns.filter((campaign) => {
     const text = `${campaign.campaign_id} ${campaign.title} ${campaign.description}`.toLowerCase();

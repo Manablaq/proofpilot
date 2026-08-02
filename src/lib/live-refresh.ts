@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProofPilotWriteMethod } from "@/lib/proofpilot-schema";
 
 export const proofPilotMutationEvent = "proofpilot:mutation";
@@ -13,7 +13,9 @@ export type ProofPilotMutationPayload = {
   from?: string;
   evmTx?: string;
   genlayerTx?: string;
+  campaignId?: string;
   submissionId?: string;
+  reportId?: string;
   timestamp: number;
 };
 
@@ -96,4 +98,61 @@ export function useProofPilotRefreshSignal() {
   }, []);
 
   return token;
+}
+
+/**
+ * Keeps read-only screens aligned with Bradbury without reloading the document.
+ * Mutation events make a successful local write appear promptly; polling and
+ * focus recovery cover delayed consensus and writes created in another tab.
+ */
+export function useProofPilotAutoRefresh(refresh: () => void | Promise<void>, intervalMs = 8_000) {
+  const refreshRef = useRef(refresh);
+  const timerRef = useRef<number | null>(null);
+  const runningRef = useRef(false);
+  const queuedRef = useRef(false);
+
+  refreshRef.current = refresh;
+
+  useEffect(() => {
+    let active = true;
+    const run = () => {
+      if (!active) return;
+      if (runningRef.current) {
+        queuedRef.current = true;
+        return;
+      }
+      runningRef.current = true;
+      Promise.resolve(refreshRef.current())
+        .catch(() => undefined)
+        .finally(() => {
+          runningRef.current = false;
+          if (active && queuedRef.current) {
+            queuedRef.current = false;
+            run();
+          }
+        });
+    };
+    const schedule = () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(run, 250);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") schedule();
+    };
+
+    run();
+    const unsubscribe = subscribeProofPilotMutation(schedule);
+    const interval = window.setInterval(schedule, intervalMs);
+    window.addEventListener("focus", schedule);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      active = false;
+      unsubscribe();
+      window.clearInterval(interval);
+      window.removeEventListener("focus", schedule);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, [intervalMs]);
 }

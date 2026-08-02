@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import type { BuilderProfile } from "@/lib/proofpilot-schema";
 import { parseJsonField, shortHash } from "@/lib/proofpilot-schema";
@@ -10,14 +10,14 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { LoadingState } from "@/components/app/LoadingState";
 import { EmptyState } from "@/components/app/EmptyState";
 import { CopyButton } from "@/components/CopyButton";
+import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
 
 export function AppBuilderProfile({ address }: { address: string }) {
   const [profile, setProfile] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
       try {
         const res = await fetch(`/api/builders/${address}`, { cache: "no-store" });
         const json = await res.json();
@@ -30,9 +30,9 @@ export function AppBuilderProfile({ address }: { address: string }) {
       } finally {
         setLoading(false);
       }
-    }
-    load();
   }, [address]);
+
+  useProofPilotAutoRefresh(load);
 
   const reports = useMemo(() => parseJsonField<string[]>(profile?.latest_report_ids_json, []), [profile]);
   const campaigns = useMemo(() => parseJsonField<string[]>(profile?.campaign_history_json, []), [profile]);

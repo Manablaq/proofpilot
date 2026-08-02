@@ -14,7 +14,9 @@ type TxState = {
   phase: "idle" | "preparing" | "wallet" | "sent" | "receipt" | "syncing" | "applied" | "error";
   evmTx: string;
   genlayerTx: string;
+  campaignId: string;
   submissionId: string;
+  reportId: string;
   stillSyncing: boolean;
   error: string;
 };
@@ -23,9 +25,17 @@ const initialState: TxState = {
   phase: "idle",
   evmTx: "",
   genlayerTx: "",
+  campaignId: "",
   submissionId: "",
+  reportId: "",
   stillSyncing: false,
   error: "",
+};
+
+type AppliedRecord = {
+  campaignId?: string;
+  submissionId?: string;
+  reportId?: string;
 };
 
 export function TransactionStatus({
@@ -43,15 +53,19 @@ export function TransactionStatus({
   gasLimit?: string;
   buttonLabel: string;
   disabled?: boolean;
-  onConfirmed?: (state: { evmTx: string; genlayerTx: string; submissionId?: string }) => void;
+  onConfirmed?: (state: { evmTx: string; genlayerTx: string; campaignId?: string; submissionId?: string; reportId?: string }) => void;
 }) {
   const wallet = useWallet();
   const [state, setState] = useState<TxState>(initialState);
   const [formVersion, setFormVersion] = useState(0);
   const lastValues = useRef("");
   const localTxIdRef = useRef("");
+  const beforeCampaignIdsRef = useRef<string[]>([]);
   const beforeSubmissionIdsRef = useRef<string[]>([]);
+  const beforeReportIdRef = useRef("");
   const confirmedTxRef = useRef({ evmTx: "", genlayerTx: "" });
+  const reconciliationInFlightRef = useRef(false);
+  const retryTimerRef = useRef<number | null>(null);
   const valueSignature = useMemo(() => JSON.stringify({ method, values, gasLimit }), [gasLimit, method, values]);
 
   useEffect(() => {
@@ -77,6 +91,24 @@ export function TransactionStatus({
     return json.data.filter((item: unknown): item is string => typeof item === "string");
   }
 
+  async function readCampaignIds() {
+    const res = await fetch("/api/campaigns", { cache: "no-store" });
+    const json = await res.json();
+    if (!res.ok || !json.ok || !Array.isArray(json.data)) {
+      return [] as string[];
+    }
+    return json.data.filter((item: unknown): item is string => typeof item === "string");
+  }
+
+  async function readSubmission(submissionId: string) {
+    const res = await fetch(`/api/submissions/${encodeURIComponent(submissionId)}`, { cache: "no-store" });
+    const json = await res.json();
+    if (!res.ok || !json.ok || !json.data || typeof json.data !== "object") {
+      return null;
+    }
+    return json.data as { latest_report_id?: unknown; status?: unknown };
+  }
+
   function newestSubmissionId(ids: string[], before: Set<string>) {
     const fresh = ids.filter((id) => !before.has(id));
     if (!fresh.length) {
@@ -85,42 +117,79 @@ export function TransactionStatus({
     return fresh.sort((a, b) => Number((b.match(/\d+$/) ?? ["0"])[0]) - Number((a.match(/\d+$/) ?? ["0"])[0]))[0];
   }
 
-  async function waitForSubmissionId(builder: string, beforeIds: string[]) {
-    const before = new Set(beforeIds);
-    // Contract reads are the source of truth. Keep polling while this component
-    // is open instead of telling a user to refresh after an accepted transaction.
+  async function waitForAppliedRecord(builder: string, beforeCampaignIds: string[], beforeSubmissionIds: string[], beforeReportId: string): Promise<AppliedRecord> {
+    const beforeCampaigns = new Set(beforeCampaignIds);
+    const beforeSubmissions = new Set(beforeSubmissionIds);
+    // A wallet receipt only proves the write was submitted. The UI advances only
+    // after the relevant record is readable from the contract, so it never asks
+    // people to refresh or clear a form after an accepted transaction.
     for (let attempt = 0; attempt < 150; attempt += 1) {
-      const ids = await readBuilderSubmissionIds(builder);
-      const detected = newestSubmissionId(ids, before);
-      if (detected) {
-        return detected;
+      try {
+        if (method === "create_campaign") {
+          const campaignId = newestSubmissionId(await readCampaignIds(), beforeCampaigns);
+          if (campaignId) {
+            return { campaignId };
+          }
+        }
+        if (method === "submit_project") {
+          const submissionId = newestSubmissionId(await readBuilderSubmissionIds(builder), beforeSubmissions);
+          if (submissionId) {
+            return { submissionId };
+          }
+        }
+        if (method === "run_review") {
+          const submissionId = values.submission_id?.trim();
+          if (submissionId) {
+            const submission = await readSubmission(submissionId);
+            const reportId = typeof submission?.latest_report_id === "string" ? submission.latest_report_id : "";
+            if (reportId && reportId !== beforeReportId) {
+              return { submissionId, reportId };
+            }
+          }
+        }
+      } catch {
+        // Bradbury reads can temporarily lag consensus; keep reconciling.
       }
       await new Promise((resolve) => setTimeout(resolve, attempt < 20 ? 3000 : 8000));
     }
-    return "";
+    return {};
   }
 
-  async function checkDelayedSubmission() {
-    if (!address || method !== "submit_project" || !state.stillSyncing) {
-      return;
-    }
-    const submissionId = await waitForSubmissionId(address, beforeSubmissionIdsRef.current);
-    if (!submissionId) {
+  function applyRecord(record: AppliedRecord) {
+    if (!Object.keys(record).length) {
       return;
     }
     if (localTxIdRef.current) {
-      updateLocalTx(localTxIdRef.current, { submissionId });
+      updateLocalTx(localTxIdRef.current, { ...record, status: "state_applied" });
     }
-    setState((current) => ({ ...current, phase: "applied", submissionId, stillSyncing: false }));
+    setState((current) => ({ ...current, phase: "applied", ...record, stillSyncing: false }));
     notifyProofPilotMutation({
       method,
       address,
       from: address,
       evmTx: confirmedTxRef.current.evmTx,
       genlayerTx: confirmedTxRef.current.genlayerTx,
-      submissionId,
+      ...record,
     });
-    onConfirmed?.({ evmTx: confirmedTxRef.current.evmTx, genlayerTx: confirmedTxRef.current.genlayerTx, submissionId });
+    onConfirmed?.({ evmTx: confirmedTxRef.current.evmTx, genlayerTx: confirmedTxRef.current.genlayerTx, ...record });
+  }
+
+  async function checkDelayedRecord() {
+    if (!address || !state.stillSyncing || reconciliationInFlightRef.current) {
+      return;
+    }
+    reconciliationInFlightRef.current = true;
+    try {
+      const record = await waitForAppliedRecord(address, beforeCampaignIdsRef.current, beforeSubmissionIdsRef.current, beforeReportIdRef.current);
+      applyRecord(record);
+      if (!Object.keys(record).length && state.stillSyncing) {
+        retryTimerRef.current = window.setTimeout(() => {
+          checkDelayedRecord().catch(() => undefined);
+        }, 10_000);
+      }
+    } finally {
+      reconciliationInFlightRef.current = false;
+    }
   }
 
   useEffect(() => {
@@ -128,11 +197,11 @@ export function TransactionStatus({
       return;
     }
     const onFocus = () => {
-      checkDelayedSubmission().catch(() => undefined);
+      checkDelayedRecord().catch(() => undefined);
     };
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        checkDelayedSubmission().catch(() => undefined);
+        checkDelayedRecord().catch(() => undefined);
       }
     };
     window.addEventListener("focus", onFocus);
@@ -140,6 +209,9 @@ export function TransactionStatus({
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
+      if (retryTimerRef.current) {
+        window.clearTimeout(retryTimerRef.current);
+      }
     };
   }, [state.stillSyncing]);
 
@@ -161,8 +233,13 @@ export function TransactionStatus({
       }
       localTxId = createLocalTx(method, address);
       localTxIdRef.current = localTxId;
+      const beforeCampaignIds = method === "create_campaign" ? await readCampaignIds() : [];
       const beforeSubmissionIds = method === "submit_project" ? await readBuilderSubmissionIds(address) : [];
+      const beforeSubmission = method === "run_review" && values.submission_id ? await readSubmission(values.submission_id) : null;
+      const beforeReportId = typeof beforeSubmission?.latest_report_id === "string" ? beforeSubmission.latest_report_id : "";
+      beforeCampaignIdsRef.current = beforeCampaignIds;
       beforeSubmissionIdsRef.current = beforeSubmissionIds;
+      beforeReportIdRef.current = beforeReportId;
 
       const preparedRes = await fetch("/api/tx/prepare", {
         method: "POST",
@@ -189,18 +266,31 @@ export function TransactionStatus({
       updateLocalTx(localTxId, { evmTx, genlayerTx, status: "evm_confirmed" });
 
       setState((prev) => ({ ...prev, phase: "syncing", evmTx, genlayerTx }));
-      const submissionId = method === "submit_project" ? await waitForSubmissionId(address, beforeSubmissionIds) : "";
-      if (submissionId) {
-        updateLocalTx(localTxId, { submissionId, status: "state_applied" });
-      } else if (method === "submit_project") {
-        updateLocalTx(localTxId, { status: "state_pending" });
+      updateLocalTx(localTxId, { status: "state_pending" });
+      notifyProofPilotMutation({ method, address, from: address, evmTx, genlayerTx });
+      reconciliationInFlightRef.current = true;
+      const record = await waitForAppliedRecord(address, beforeCampaignIds, beforeSubmissionIds, beforeReportId);
+      reconciliationInFlightRef.current = false;
+      if (Object.keys(record).length) {
+        updateLocalTx(localTxId, { ...record, status: "state_applied" });
       }
-
-      const stateApplied = method !== "submit_project" || Boolean(submissionId);
-      setState({ phase: stateApplied ? "applied" : "syncing", evmTx, genlayerTx, submissionId, stillSyncing: method === "submit_project" && !submissionId, error: "" });
-      notifyProofPilotMutation({ method, address, from: address, evmTx, genlayerTx, submissionId });
-      if (stateApplied) {
-        onConfirmed?.({ evmTx, genlayerTx, submissionId });
+      setState({
+        phase: Object.keys(record).length ? "applied" : "syncing",
+        evmTx,
+        genlayerTx,
+        campaignId: record.campaignId ?? "",
+        submissionId: record.submissionId ?? "",
+        reportId: record.reportId ?? "",
+        stillSyncing: !Object.keys(record).length,
+        error: "",
+      });
+      if (Object.keys(record).length) {
+        notifyProofPilotMutation({ method, address, from: address, evmTx, genlayerTx, ...record });
+        onConfirmed?.({ evmTx, genlayerTx, ...record });
+      } else {
+        retryTimerRef.current = window.setTimeout(() => {
+          checkDelayedRecord().catch(() => undefined);
+        }, 10_000);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Transaction failed";
@@ -221,14 +311,14 @@ export function TransactionStatus({
 
   const busy = ["preparing", "wallet", "sent", "receipt", "syncing"].includes(state.phase);
   const locked = busy || state.phase === "applied";
-  const appliedLabel = method === "submit_project" ? "Submission recorded on-chain" : "Transaction recorded on-chain";
+  const appliedLabel = method === "create_campaign" ? "Campaign recorded on-chain" : method === "run_review" ? "Review report recorded on-chain" : "Submission recorded on-chain";
   const phaseText = {
     idle: buttonLabel,
     preparing: "Preparing wallet transaction",
     wallet: "Waiting for wallet signature",
     sent: "Transaction sent",
     receipt: "Waiting for Bradbury confirmation",
-    syncing: "Waiting for on-chain state",
+    syncing: "Waiting for readable on-chain state",
     applied: appliedLabel,
     error: "Retry transaction",
   }[state.phase];
@@ -258,7 +348,7 @@ export function TransactionStatus({
           {state.phase === "preparing" ? <p className="mt-2 text-slate-400">Encoding GenLayer calldata. Your wallet will not open if preparation fails.</p> : null}
           {state.phase === "wallet" ? <p className="mt-2 text-slate-400">Review the request in your wallet. Rejecting it will not send a transaction.</p> : null}
           {state.phase === "receipt" ? <p className="mt-2 text-slate-400">The EVM transaction was sent. Waiting for Bradbury receipt and contract reads.</p> : null}
-          {state.phase === "syncing" ? <p className="mt-2 text-slate-400">The wallet transaction has an EVM receipt. ProofPilot is checking the contract automatically until the new record is readable.</p> : null}
+          {state.phase === "syncing" ? <p className="mt-2 text-slate-400">The wallet transaction has an EVM receipt. ProofPilot is automatically checking Bradbury until the exact campaign, submission, or review report is readable.</p> : null}
           {state.evmTx ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-slate-300">
               <span>EVM tx: {shortHash(state.evmTx)}</span>
@@ -288,6 +378,18 @@ export function TransactionStatus({
                 <a className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100" href={`/app/submissions/${state.submissionId}`}>View submission</a>
                 <a className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10" href="/app/me">Open workspace</a>
               </div>
+            </div>
+          ) : null}
+          {state.campaignId ? (
+            <div className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
+              <p className="font-semibold text-emerald-100">New campaign detected: {state.campaignId}</p>
+              <a className="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100" href={`/app/campaigns/${state.campaignId}`}>Open campaign</a>
+            </div>
+          ) : null}
+          {state.reportId ? (
+            <div className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
+              <p className="font-semibold text-emerald-100">New review report detected: {state.reportId}</p>
+              <a className="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-100" href={`/app/reports/${state.reportId}`}>Open report</a>
             </div>
           ) : null}
           {state.error ? <p className="mt-3 text-amber-200">{state.error}</p> : null}
