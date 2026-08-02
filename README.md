@@ -2,7 +2,7 @@
 
 AI consensus review for the builder economy.
 
-> **Release status — V9 candidate:** V8 is finalized historical evidence, but its end-to-end review reached an undetermined consensus outcome. V9 is the clean replacement: validators independently derive the stored decision from public evidence, while AI-generated commentary is bounded non-decision context. V9 must be deployed, finalized, and complete one end-to-end fixture before portal submission.
+> **Release status — V9 finalized on Bradbury:** [contract `0x5E32…8504`](https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504) was finalized from [deployment `0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f). Validators independently derive the stored decision from public evidence, while AI-generated commentary is bounded non-decision context. One clean end-to-end fixture remains required before portal submission.
 
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 

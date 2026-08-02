@@ -12,10 +12,10 @@ V9 is a clean Bradbury deployment candidate. It does not upgrade or alter histor
 
 ## Required release steps
 
-- [ ] Deploy `contracts/proofpilot.py` as a new Bradbury contract using `npm run deploy:v9` or GenLayer Studio.
-- [ ] Wait for the deployment to become **finalized** in GenExplorer.
-- [ ] Verify `list_campaigns(0, 1)` through the public Bradbury RPC.
-- [ ] Update `src/lib/deployment.ts` with only the finalized V9 address and deployment transaction.
+- [x] Deploy `contracts/proofpilot.py` as a new Bradbury contract using GenLayer Studio: [`0x5E32…8504`](https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504).
+- [x] Wait for the deployment to become **finalized** in GenExplorer: [`0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f).
+- [x] Verify `list_campaigns(0, 1)` through the public Bradbury RPC (returned `[]` on Aug 2, 2026).
+- [x] Update `src/lib/deployment.ts` with only the finalized V9 address and deployment transaction.
 - [ ] Push the address update and verify the public Vercel build serves it.
 - [ ] Create an active campaign from the owner wallet.
 - [ ] Submit the ProofPilot fixture from a different wallet using `https://proofpilot-two.vercel.app/evidence` as the live evidence URL.

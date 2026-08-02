@@ -1,14 +1,14 @@
 export const deployment = {
-  contractAddress: "0x35B51C656609507203093B7D9976F1C856e6B86e",
+  contractAddress: "0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504",
   deploymentTx:
-    "0x5205519d400e5ba3359ecae4858a0396fc2fd465d4397af05e8956e6d3986be5",
+    "0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f",
   smokeTestTx: "",
   submitGenlayerTx: "",
   runReviewTx: "",
   explorerContract:
-    "https://explorer-bradbury.genlayer.com/address/0x35B51C656609507203093B7D9976F1C856e6B86e",
+    "https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504",
   explorerTx:
-    "https://explorer-bradbury.genlayer.com/tx/0x5205519d400e5ba3359ecae4858a0396fc2fd465d4397af05e8956e6d3986be5",
+    "https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f",
   explorerBase: "https://explorer-bradbury.genlayer.com",
   liveApp: "https://proofpilot-two.vercel.app",
   githubRepo: "https://github.com/Manablaq/proofpilot",
