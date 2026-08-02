@@ -10,8 +10,8 @@ import { VideoHero } from "@/components/VideoHero";
 const trust = [
   "Finalized on GenLayer Bradbury",
   "Public contract schema verified",
-  "Clean on-chain state",
-  "End-to-end fixture in progress",
+  "Finalized end-to-end review fixture",
+  "Public report and evidence snapshot",
 ];
 
 export default function Home() {

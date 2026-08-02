@@ -46,7 +46,7 @@ export function AppSidebar({ pathname, onNavigate }: { pathname: string; onNavig
       <div className="mt-8 rounded-lg border border-white/10 bg-white/[0.03] p-4">
         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Live deployment</p>
         <p className="mt-2 text-sm font-semibold text-white">Bradbury deployment</p>
-        <p className="mt-1 text-xs text-slate-500">End-to-end fixture pending</p>
+        <p className="mt-1 text-xs text-slate-500">End-to-end fixture finalized</p>
       </div>
     </div>
   );

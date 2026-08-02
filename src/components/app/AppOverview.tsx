@@ -154,9 +154,9 @@ export function AppOverview() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm text-slate-500">End-to-end status</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-white">No review fixture yet</h2>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">{state.report ? "Finalized review fixture" : "No review fixture yet"}</h2>
                   <p className="mt-2 text-sm text-slate-400">
-                    The contract is finalized and readable. Create a campaign, submit public evidence, then run an independent validator review.
+                    {state.report ? "The public fixture has a stored on-chain report. Human program owners retain the final program decision." : "The contract is finalized and readable. Create a campaign, submit public evidence, then run an independent validator review."}
                   </p>
                 </div>
                 {state.report ? <StatusBadge tone={statusTone(state.report.status)}>{state.report.status}</StatusBadge> : null}

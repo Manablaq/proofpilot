@@ -19,7 +19,7 @@ export default function ProductDocsVerifyPage() {
             {[
               ["Contract", deployment.contractAddress],
               ["Deployment transaction", deployment.deploymentTx],
-              ["Workflow fixture", "Pending — no campaign, submission, or report is asserted yet"],
+              ["Workflow fixture", "Finalized: campaign_1 → submission_1 → report_1"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-sm text-slate-500">{label}</p>
@@ -33,9 +33,9 @@ export default function ProductDocsVerifyPage() {
           <div className="mt-5 space-y-3">
             {[
               "Open the Bradbury deployment transaction and confirm FINALIZED / accepted.",
-              "Read list_campaigns(0, 1) and confirm the clean state before creating a fixture.",
-              "Create a campaign with an exact 100-point custom rubric.",
-              "After the workflow is run, inspect the stored submission, report, snapshot, and the review transaction.",
+              "Read campaign_1, submission_1, report_1, and snapshot_1 from the finalized contract.",
+              "Confirm the executable rubric totals 100 points and the report contains all score categories.",
+              "Open the finalized review transaction and inspect the stored report, snapshot, and source evidence health.",
             ].map((item) => (
               <div key={item} className="flex gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
                 <StatusBadge tone="success">Check</StatusBadge>

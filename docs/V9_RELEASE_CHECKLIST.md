@@ -17,11 +17,11 @@ V9 is a clean Bradbury deployment candidate. It does not upgrade or alter histor
 - [x] Verify `list_campaigns(0, 1)` through the public Bradbury RPC (returned `[]` on Aug 2, 2026).
 - [x] Update `src/lib/deployment.ts` with only the finalized V9 address and deployment transaction.
 - [x] Push the address update and verify the public Vercel build serves the finalized V9 address (`0x5E32…8504`).
-- [ ] Create an active campaign from the owner wallet.
-- [ ] Submit the ProofPilot fixture from a different wallet using `https://proofpilot-two.vercel.app/evidence` as the live evidence URL.
-- [ ] Run the review from the campaign-owner wallet and wait for a readable on-chain report.
-- [ ] Record finalized campaign, submission, report, contract, and transaction links before portal submission.
+- [x] Create the active campaign `campaign_1` from the owner wallet.
+- [x] Submit the ProofPilot fixture as `submission_1` from a different builder wallet using `https://proofpilot-two.vercel.app/evidence` as the live evidence URL.
+- [x] Run the owner review and confirm readable `report_1` / `snapshot_1`: `100/100`, `READY_FOR_REVIEW`, `LOW` risk, and `APPROVE_FOR_HUMAN_REVIEW`.
+- [x] Record the finalized review transaction: [`0xfdfb…9be4`](https://explorer-bradbury.genlayer.com/tx/0xfdfb62a1e2c883ab89b8a705282a3c11c3ad1027a8984a0df4ae67605cd59be4).
 
 ## Release gate
 
-Do not describe ProofPilot as submission-ready until the V9 report is accepted, finalized, and independently readable through the public RPC and the public frontend.
+The contract, campaign, submission, report, and review transaction are finalized and publicly readable. Portal review remains an independent decision; describe the completed fixture accurately and do not represent its recommendation as an automatic human-program approval.

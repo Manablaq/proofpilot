@@ -2,7 +2,7 @@
 
 AI consensus review for the builder economy.
 
-> **Release status — V9 finalized on Bradbury:** [contract `0x5E32…8504`](https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504) was finalized from [deployment `0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f). Validators independently derive the stored decision from public evidence, while AI-generated commentary is bounded non-decision context. One clean end-to-end fixture remains required before portal submission.
+> **Release status — finalized end-to-end workflow on Bradbury:** [contract `0x5E32…8504`](https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504) was finalized from [deployment `0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f). The public fixture (`campaign_1` → `submission_1` → `report_1`) reached `100/100`, `READY_FOR_REVIEW`, `LOW` risk, and `APPROVE_FOR_HUMAN_REVIEW`; its [review transaction `0xfdfb…9be4`](https://explorer-bradbury.genlayer.com/tx/0xfdfb62a1e2c883ab89b8a705282a3c11c3ad1027a8984a0df4ae67605cd59be4) is finalized. This is a recommendation for a human program owner, not an automatic grant or legal decision.
 
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 
@@ -94,7 +94,7 @@ Historical deployments remain independently auditable and are not represented as
 
 - V8 contract: [`0x35B5…B86e`](https://explorer-bradbury.genlayer.com/address/0x35B51C656609507203093B7D9976F1C856e6B86e), finalized from [`0x5205…6be5`](https://explorer-bradbury.genlayer.com/tx/0x5205519d400e5ba3359ecae4858a0396fc2fd465d4397af05e8956e6d3986be5).
 - V8’s fixture generated a valid leader report but ended undetermined during validator agreement. It is not a successful workflow record.
-- V9 is the pending replacement deployment. It is intentionally not configured in the public dApp until finalized and readable.
+- The finalized replacement deployment is configured in the public dApp and has a completed public fixture. Historical V8 outcomes remain separate evidence.
 
 ### Stable machine-readable evidence
 
@@ -186,4 +186,4 @@ To verify reports manually, read `get_report("report_1")`, `get_submission("subm
 
 ## Current Repository Status
 
-This repository contains the V9 candidate contract source, executable architecture checks, protocol documentation, and a browser frontend that remains configured for the latest finalized historical address until V9 is finalized. Historical deployments are not evidence of a completed V9 workflow.
+This repository contains the finalized contract source, executable architecture checks, protocol documentation, and a browser frontend configured for the finalized Bradbury deployment. The documented campaign, submission, snapshot, report, and final review transaction are the completed public workflow fixture.

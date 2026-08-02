@@ -21,7 +21,7 @@ export function DeploymentCard() {
           <h3 className="mt-2 text-2xl font-semibold text-white">Bradbury deployment finalized</h3>
         </div>
         <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-sm text-emerald-100">
-          End-to-end test pending
+          End-to-end test finalized
         </span>
       </div>
       <div className="mt-7 space-y-3">
