@@ -16,7 +16,7 @@ V9 is a clean Bradbury deployment candidate. It does not upgrade or alter histor
 - [x] Wait for the deployment to become **finalized** in GenExplorer: [`0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f).
 - [x] Verify `list_campaigns(0, 1)` through the public Bradbury RPC (returned `[]` on Aug 2, 2026).
 - [x] Update `src/lib/deployment.ts` with only the finalized V9 address and deployment transaction.
-- [ ] Push the address update and verify the public Vercel build serves it.
+- [x] Push the address update and verify the public Vercel build serves the finalized V9 address (`0x5E32…8504`).
 - [ ] Create an active campaign from the owner wallet.
 - [ ] Submit the ProofPilot fixture from a different wallet using `https://proofpilot-two.vercel.app/evidence` as the live evidence URL.
 - [ ] Run the review from the campaign-owner wallet and wait for a readable on-chain report.
