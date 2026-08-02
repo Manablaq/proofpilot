@@ -2,7 +2,7 @@
 
 AI consensus review for the builder economy.
 
-> **Release status — V8 candidate ready for Bradbury deployment:** V7 is finalized at [contract `0x3764…841b`](https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b), but its public review fixture exposed an AI-narrative normalization failure. V8 repairs that consensus defect and must be deployed as a clean contract before the project is represented as portal-submission-ready. See [`docs/V8_RELEASE_CHECKLIST.md`](docs/V8_RELEASE_CHECKLIST.md).
+> **Release status — V8 finalized on Bradbury:** [contract `0x35B5…B86e`](https://explorer-bradbury.genlayer.com/address/0x35B51C656609507203093B7D9976F1C856e6B86e) was finalized from [deployment `0x5205…6be5`](https://explorer-bradbury.genlayer.com/tx/0x5205519d400e5ba3359ecae4858a0396fc2fd465d4397af05e8956e6d3986be5). This is a clean replacement deployment that repairs V7's AI-narrative normalization defect. Its end-to-end campaign and review fixture must still complete before portal submission.
 
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 

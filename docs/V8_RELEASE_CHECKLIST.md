@@ -10,10 +10,10 @@ V8 is a new Bradbury deployment candidate. It does not alter the historical V7 c
 
 ## Required release steps
 
-- [ ] Deploy `contracts/proofpilot.py` as a new Bradbury contract.
-- [ ] Wait for the deployment to become **finalized** in GenExplorer.
-- [ ] Verify the new contract can serve `list_campaigns(0, 1)` through the public RPC.
-- [ ] Update `src/lib/deployment.ts` with only the finalized V8 address and deployment transaction.
+- [x] Deploy `contracts/proofpilot.py` as a new Bradbury contract: [`0x35B5…B86e`](https://explorer-bradbury.genlayer.com/address/0x35B51C656609507203093B7D9976F1C856e6B86e).
+- [x] Wait for the deployment to become **finalized** in GenExplorer: [`0x5205…6be5`](https://explorer-bradbury.genlayer.com/tx/0x5205519d400e5ba3359ecae4858a0396fc2fd465d4397af05e8956e6d3986be5).
+- [x] Verify the new contract can serve `list_campaigns(0, 1)` through the public RPC (returned `[]` on Aug 2, 2026).
+- [x] Update `src/lib/deployment.ts` with only the finalized V8 address and deployment transaction.
 - [ ] Push the deployment-address update and verify the public Vercel build serves it.
 - [ ] Create a clean campaign and submit a valid project from a different wallet.
 - [ ] Verify the public control flow, then run a review from the campaign-owner wallet.
