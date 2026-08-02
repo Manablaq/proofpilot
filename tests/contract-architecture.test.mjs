@@ -23,9 +23,17 @@ test("contract and deployment identifiers are fetched and recorded without overs
   assert.doesNotMatch(source, /"contract_address": \{"source": "contract_address", "status": UNSUPPORTED/);
 });
 
-test("validators independently reproduce review work and compare bounded decision fields", () => {
+test("validators independently derive the canonical source-grounded decision", () => {
   assert.match(source, /def pp_compare_review\(s: dict, rubric: dict, leaders_res\)/);
-  assert.match(source, /own = pp_run_review\(s, rubric\)/);
-  assert.match(source, /def pp_review_equivalent\(/);
-  assert.match(source, /return pp_same_facts\(leader_facts, own\["facts"\]\) and pp_review_equivalent\(leader_review, own\["review"\], rubric\)/);
+  assert.match(source, /def pp_deterministic_review\(facts: dict, rubric: dict, narrative: dict\)/);
+  assert.match(source, /own_facts = pp_compact_facts\(s\)/);
+  assert.match(source, /pp_review_matches_facts\(leader.get\("review"\), own_facts, rubric\)/);
+  assert.doesNotMatch(source, /pp_review_equivalent/);
+});
+
+test("AI commentary is bounded but cannot change consensus-critical scoring", () => {
+  assert.match(source, /def pp_narrative\(s: dict, facts: dict\)/);
+  assert.match(source, /Best-effort AI context; malformed or unavailable AI output never aborts review/);
+  assert.match(source, /scores = \{/);
+  assert.match(source, /"live_app_availability": rubric\["live_app_availability"\] if facts\["live_app_reachable"\] else 0/);
 });
