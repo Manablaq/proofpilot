@@ -10,7 +10,9 @@ import { LoadingState } from "@/components/app/LoadingState";
 import { CopyButton } from "@/components/CopyButton";
 import { WalletPanel } from "@/components/WalletPanel";
 import { RunReviewPanel } from "@/components/RunReviewPanel";
+import { ReviewGovernancePanel } from "@/components/app/ReviewGovernancePanel";
 import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
+import { deployment } from "@/lib/deployment";
 
 export function AppSubmissionDetail({ submissionId }: { submissionId: string }) {
   const [address, setAddress] = useState("");
@@ -136,6 +138,13 @@ export function AppSubmissionDetail({ submissionId }: { submissionId: string }) 
                 ) : null}
               </SectionCard>
             )}
+            {submission.latest_report_id && deployment.governanceWorkflowEnabled ? <ReviewGovernancePanel address={address} campaign={campaign} submission={submission} /> : null}
+            {submission.latest_report_id && !deployment.governanceWorkflowEnabled ? (
+              <SectionCard className="p-6">
+                <h2 className="text-2xl font-semibold text-white">Governance workflow</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">This Bradbury deployment supports evidence review. Report-linked re-check, appeal resolution, and human decisions are available only after the V10 governance contract is deployed and configured.</p>
+              </SectionCard>
+            ) : null}
           </div>
         </div>
       ) : null}

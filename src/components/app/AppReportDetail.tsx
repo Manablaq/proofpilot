@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import type { EvidenceSnapshot, ReviewReport } from "@/lib/proofpilot-schema";
+import type { EvidenceSnapshot, ReportDecisionRecord, ReviewReport } from "@/lib/proofpilot-schema";
 import { parseJsonField } from "@/lib/proofpilot-schema";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
@@ -11,10 +11,12 @@ import { LoadingState } from "@/components/app/LoadingState";
 import { EmptyState } from "@/components/app/EmptyState";
 import { CopyButton } from "@/components/CopyButton";
 import { useProofPilotAutoRefresh } from "@/lib/live-refresh";
+import { deployment } from "@/lib/deployment";
 
 export function AppReportDetail({ reportId }: { reportId: string }) {
   const [report, setReport] = useState<ReviewReport | null>(null);
   const [snapshot, setSnapshot] = useState<EvidenceSnapshot | null>(null);
+  const [decisions, setDecisions] = useState<ReportDecisionRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -31,6 +33,13 @@ export function AppReportDetail({ reportId }: { reportId: string }) {
         const snapJson = await snapRes.json();
         if (snapJson.ok) {
           setSnapshot(snapJson.data);
+        }
+        if (deployment.governanceWorkflowEnabled) {
+          const decisionRes = await fetch(`/api/reports/${reportId}/decisions`, { cache: "no-store" });
+          const decisionJson = await decisionRes.json();
+          if (decisionJson.ok) {
+            setDecisions(decisionJson.data as ReportDecisionRecord);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not load report");
@@ -149,6 +158,34 @@ export function AppReportDetail({ reportId }: { reportId: string }) {
             <ListCard title="Fetch failures" items={failures} />
           </div>
 
+          {deployment.governanceWorkflowEnabled ? <SectionCard className="mt-6 p-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Public decision ledger</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Recorded governance decisions</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">This report-linked record makes appeal outcomes and human decisions independently retrievable. The original consensus report remains unchanged.</p>
+              </div>
+              <Link href={`/api/reports/${reportId}/decisions`} className="text-sm font-semibold text-cyan-200 hover:text-cyan-100">Open JSON record ↗</Link>
+            </div>
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              <DecisionList title="Appeals" empty="No appeal has been recorded for this report." items={decisions?.appeals ?? []} render={(appeal) => (
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium text-white">{appeal.appeal_id}</span><StatusBadge tone={statusTone(appeal.status)}>{appeal.status}</StatusBadge></div>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{appeal.reason}</p>
+                  {appeal.resolution_notes ? <p className="mt-3 text-sm leading-6 text-slate-400"><span className="font-medium text-slate-200">Resolution:</span> {appeal.resolution_notes}</p> : null}
+                  {appeal.resolved_by ? <p className="mt-3 break-all text-xs text-slate-500">Resolved by {appeal.resolved_by}</p> : null}
+                </div>
+              )} />
+              <DecisionList title="Human decisions" empty="No human decision has been recorded for this report." items={decisions?.human_decisions ?? []} render={(decision) => (
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium text-white">{decision.human_decision_id}</span><StatusBadge tone={statusTone(decision.decision_status)}>{decision.decision_status}</StatusBadge></div>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{decision.notes}</p>
+                  <p className="mt-3 break-all text-xs text-slate-500">Recorded by {decision.reviewer}</p>
+                </div>
+              )} />
+            </div>
+          </SectionCard> : null}
+
           {warnings.length ? (
             <SectionCard className="mt-6 p-6">
               <h2 className="text-xl font-semibold text-white">Snapshot warnings</h2>
@@ -180,5 +217,14 @@ function ListCard({ title, items }: { title: string; items: string[] }) {
         {items.length ? items.map((item) => <li key={item}>{item}</li>) : <li>None reported.</li>}
       </ul>
     </SectionCard>
+  );
+}
+
+function DecisionList<T>({ title, empty, items, render }: { title: string; empty: string; items: T[]; render: (item: T) => ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <div className="mt-4 space-y-3">{items.length ? items.map((item, index) => <div key={index}>{render(item)}</div>) : <p className="rounded-lg border border-dashed border-white/10 p-4 text-sm text-slate-500">{empty}</p>}</div>
+    </div>
   );
 }

@@ -16,6 +16,7 @@ export type LocalTxEntry = {
   submissionId?: string;
   campaignId?: string;
   reportId?: string;
+  appealId?: string;
   status: LocalTxStatus;
   error?: string;
   createdAt: string;
@@ -59,7 +60,7 @@ export function createLocalTx(method: ProofPilotWriteMethod, from: string, chain
   return entry.id;
 }
 
-export function updateLocalTx(id: string, patch: Partial<Pick<LocalTxEntry, "evmTx" | "genlayerTx" | "submissionId" | "campaignId" | "reportId" | "status" | "error" | "chainId">>) {
+export function updateLocalTx(id: string, patch: Partial<Pick<LocalTxEntry, "evmTx" | "genlayerTx" | "submissionId" | "campaignId" | "reportId" | "appealId" | "status" | "error" | "chainId">>) {
   const now = new Date().toISOString();
   writeAll(readAll().map((entry) => entry.id === id ? { ...entry, ...patch, updatedAt: now } : entry));
 }

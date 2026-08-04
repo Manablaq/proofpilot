@@ -22,6 +22,22 @@ export const proofPilotMethods = {
     type: "write",
     args: ["submission_id"],
   },
+  request_recheck: {
+    type: "write",
+    args: ["submission_id", "fixes_explanation", "updated_live_app_url", "updated_github_repo_url", "updated_docs_url", "updated_contract_address", "updated_deployment_tx_hash"],
+  },
+  open_appeal: {
+    type: "write",
+    args: ["submission_id", "report_id", "reason", "new_evidence_json"],
+  },
+  resolve_appeal: {
+    type: "write",
+    args: ["appeal_id", "resolution_status", "resolution_notes"],
+  },
+  record_human_decision: {
+    type: "write",
+    args: ["submission_id", "report_id", "decision_status", "notes"],
+  },
 } as const;
 
 export const rubricKeys = [
@@ -164,6 +180,38 @@ export type BuilderProfile = {
   appeal_count: number;
   recheck_count: number;
   updated_at?: string;
+};
+
+export type Appeal = {
+  appeal_id: string;
+  submission_id: string;
+  campaign_id: string;
+  builder: string;
+  report_id: string;
+  reason: string;
+  new_evidence_json: string;
+  status: string;
+  resolution_notes: string;
+  resolved_by: string;
+  created_at?: string;
+  resolved_at?: string;
+};
+
+export type HumanDecision = {
+  human_decision_id: string;
+  submission_id: string;
+  campaign_id: string;
+  report_id: string;
+  reviewer: string;
+  decision_status: string;
+  notes: string;
+  created_at?: string;
+};
+
+export type ReportDecisionRecord = {
+  report: ReviewReport;
+  appeals: Appeal[];
+  human_decisions: HumanDecision[];
 };
 
 export function parseJsonField<T>(value: unknown, fallback: T): T {

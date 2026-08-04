@@ -8,9 +8,9 @@ This document defines the ProofPilot authorization model. Permissions must prote
 
 Protocol owner manages protocol-level configuration in future extensions. This actor should not have routine power to edit campaign reports.
 
-Campaign owner creates a campaign, controls campaign policy, and can record human decisions or authorize reviewers.
+Campaign owner creates a campaign, controls campaign policy, resolves open appeals, and records human decisions.
 
-Authorized reviewer is approved by campaign policy to record human decisions and, when allowed, trigger reviews or re-checks.
+The V10 candidate does not implement delegated reviewer roles or reviewer allowlists. References to an “authorized reviewer” below describe a future extension, not an available V10 permission.
 
 Builder creates submissions, requests re-checks for their submissions, and opens appeals for their reports.
 
@@ -25,7 +25,8 @@ Public viewer reads public protocol data.
 | `run_review` | policy-dependent | policy-dependent | policy-dependent | policy-dependent | policy-dependent |
 | `request_recheck` | no by default | yes | yes if policy allows | yes for own submission | no |
 | `open_appeal` | no by default | no by default | no by default | yes for own submission | no |
-| `record_human_decision` | future extension only | yes | yes if authorized | no | no |
+| `resolve_appeal` | no | yes | no (not implemented) | no | no |
+| `record_human_decision` | no | yes | no (not implemented) | no | no |
 | read methods | yes | yes | yes | yes | yes |
 | list methods | yes | yes | yes | yes | yes |
 
@@ -55,7 +56,11 @@ The caller must be the submission builder unless campaign policy explicitly allo
 
 ### `record_human_decision`
 
-The caller must be the campaign owner or an authorized reviewer. The decision must reference a valid submission and report. The method must not edit AI report contents.
+The caller must be the campaign owner. The decision must reference a valid submission and report. The method must not edit AI report contents.
+
+### `resolve_appeal`
+
+The caller must be the campaign owner. The appeal must still be `OPEN`; its resolution is append-only state on the separate appeal record. `ACCEPTED` and `RECHECK_SCHEDULED` transition the associated submission to `RECHECK_REQUESTED`; `REJECTED` and `CLOSED` transition it to `REVIEWED`.
 
 ### Read Methods
 
@@ -68,6 +73,8 @@ The following are public:
 - `get_latest_report`
 - `get_builder_profile`
 - `get_appeal`
+- `get_human_decision`
+- `get_report_decisions`
 
 ### List Methods
 
@@ -76,6 +83,8 @@ The following are public with pagination bounds:
 - `list_campaigns`
 - `list_submissions`
 - `list_reports`
+- `list_appeals`
+- `list_human_decisions`
 
 ## Admin Safety Rules
 

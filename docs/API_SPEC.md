@@ -115,7 +115,25 @@ Success response: appeal ID.
 
 Error conditions: missing submission, missing report, report does not belong to submission, unauthorized caller, empty reason, malformed new evidence JSON, appeal limit exceeded.
 
-Frontend usage notes: Appeals should be attached to a specific report, not only to a submission.
+`new_evidence_json` is restricted to an object with optional `public_urls` (at most five public `https://` URLs) and `notes` fields. Other keys, arbitrary instructions, private material, and malformed JSON are rejected.
+
+Frontend usage notes: Appeals should be attached to a specific report, not only to a submission. The evidence must be shown as public context, not as a replacement for the report's captured evidence.
+
+### `resolve_appeal`
+
+Type: write
+
+Parameters:
+
+- `appeal_id: str`
+- `resolution_status: str` — one of `RECHECK_SCHEDULED`, `ACCEPTED`, `REJECTED`, or `CLOSED`
+- `resolution_notes: str`
+
+Return type: `str`
+
+Success response: appeal ID.
+
+Authorization: campaign owner only. An accepted or scheduled appeal transitions the submission to `RECHECK_REQUESTED` and consumes one configured re-check allowance. A rejected or closed appeal returns it to `REVIEWED`. The appealed report is not edited.
 
 ### `record_human_decision`
 
@@ -132,7 +150,7 @@ Return type: `str`
 
 Success response: human decision ID.
 
-Error conditions: unauthorized caller, missing submission, missing report, report/submission mismatch, invalid decision status, oversized notes.
+Error conditions: unauthorized caller, missing submission, missing report, report/submission mismatch, invalid final decision status, oversized notes.
 
 Frontend usage notes: Display as separate human decision panel. Do not overwrite AI report display.
 
@@ -233,6 +251,24 @@ Success response: full appeal object.
 Error conditions: missing appeal.
 
 Frontend usage notes: Link appeals from submission and report pages.
+
+### `get_human_decision`
+
+Type: read
+
+Parameters: `human_decision_id: str`
+
+Return type: serialized `HumanDecision` JSON.
+
+### `get_report_decisions`
+
+Type: read
+
+Parameters: `report_id: str`
+
+Return type: serialized JSON object containing the immutable report, every linked appeal, and every linked human decision.
+
+Frontend usage notes: expose a public report-linked ledger rather than overwriting the report with a human outcome.
 
 ### `list_campaigns`
 

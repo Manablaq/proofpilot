@@ -210,7 +210,7 @@ Then implement `open_appeal`:
 9. Set submission status to `APPEALED`.
 10. Return appeal ID.
 
-FUTURE EXTENSION: Appeal resolution states and methods.
+Implemented in the V10 candidate: campaign-owner appeal resolution through `resolve_appeal`, with a required resolution note and explicit final outcome.
 
 ## Evidence Fetch Helper Plan
 
@@ -440,9 +440,7 @@ WARNING: Do not invent a compile command until the GenLayer scaffold exists. The
 
 - FUTURE EXTENSION: Campaign status update method.
 - FUTURE EXTENSION: Reviewer allowlist management.
-- FUTURE EXTENSION: Appeal resolution method.
 - FUTURE EXTENSION: Submission close method.
-- FUTURE EXTENSION: `get_human_decision` and human decision history list, unless added before implementation.
 - FUTURE EXTENSION: Snapshot list method.
 - FUTURE EXTENSION: Events, if the initial GenLayer scaffold does not require them.
 - FUTURE EXTENSION: Deposits, staking, or fee-based spam prevention.

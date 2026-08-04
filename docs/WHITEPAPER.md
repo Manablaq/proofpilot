@@ -1,5 +1,7 @@
 # ProofPilot Whitepaper
 
+> **Release note.** This paper describes the protocol design. The historical V9 Bradbury deployment provides the evidence-review flow. The report-linked appeal-resolution and human-decision flow is implemented in the V10 candidate and must be freshly deployed and acceptance-tested before it is described as live. See [GOVERNANCE_WORKFLOW.md](./GOVERNANCE_WORKFLOW.md).
+
 ## Abstract
 
 ProofPilot is a GenLayer-native protocol for decentralized review of builder work. It uses GenLayer Intelligent Contracts to fetch live evidence, evaluate submissions against transparent rubrics, produce AI consensus review reports, and publish review history on-chain. The protocol is designed for grants, hackathons, bounty programs, ecosystem app reviews, and builder reputation.
@@ -39,15 +41,15 @@ The core flow is:
 6. The contract validates strict JSON output and stores a review report.
 7. Builder reputation is updated from accepted report data.
 8. Builders may request re-checks or open appeals.
-9. Authorized humans may record separate final decisions.
+9. In the V10 candidate, the campaign owner may resolve an appeal or record a separate final decision.
 
 ## Actors
 
 Protocol owner manages protocol-level configuration in future versions. The Phase 2 contract surface does not require broad protocol-owner powers for ordinary review flows.
 
-Campaign owner creates and administers a campaign, configures review policy, and may record or authorize human decisions.
+Campaign owner creates and administers a campaign, configures review policy, resolves appeals, and records human decisions.
 
-Authorized reviewer is a campaign-level human reviewer who can record human decisions when permitted by campaign policy.
+Delegated reviewers are a planned governance extension. They are not an available V10 role.
 
 Builder submits project evidence, requests re-checks, and opens appeals for their submissions.
 

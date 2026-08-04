@@ -17,6 +17,7 @@ type TxState = {
   campaignId: string;
   submissionId: string;
   reportId: string;
+  appealId: string;
   stillSyncing: boolean;
   error: string;
 };
@@ -28,6 +29,7 @@ const initialState: TxState = {
   campaignId: "",
   submissionId: "",
   reportId: "",
+  appealId: "",
   stillSyncing: false,
   error: "",
 };
@@ -36,6 +38,7 @@ type AppliedRecord = {
   campaignId?: string;
   submissionId?: string;
   reportId?: string;
+  appealId?: string;
 };
 
 export function TransactionStatus({
@@ -53,7 +56,7 @@ export function TransactionStatus({
   gasLimit?: string;
   buttonLabel: string;
   disabled?: boolean;
-  onConfirmed?: (state: { evmTx: string; genlayerTx: string; campaignId?: string; submissionId?: string; reportId?: string }) => void;
+  onConfirmed?: (state: { evmTx: string; genlayerTx: string; campaignId?: string; submissionId?: string; reportId?: string; appealId?: string }) => void;
 }) {
   const wallet = useWallet();
   const [state, setState] = useState<TxState>(initialState);
@@ -63,6 +66,8 @@ export function TransactionStatus({
   const beforeCampaignIdsRef = useRef<string[]>([]);
   const beforeSubmissionIdsRef = useRef<string[]>([]);
   const beforeReportIdRef = useRef("");
+  const beforeSubmissionStateRef = useRef("");
+  const beforeAppealStateRef = useRef("");
   const confirmedTxRef = useRef({ evmTx: "", genlayerTx: "" });
   const reconciliationInFlightRef = useRef(false);
   const retryTimerRef = useRef<number | null>(null);
@@ -106,7 +111,35 @@ export function TransactionStatus({
     if (!res.ok || !json.ok || !json.data || typeof json.data !== "object") {
       return null;
     }
-    return json.data as { latest_report_id?: unknown; status?: unknown };
+    return json.data as {
+      latest_report_id?: unknown;
+      status?: unknown;
+      recheck_count?: unknown;
+      appeal_count?: unknown;
+      updated_at?: unknown;
+    };
+  }
+
+  function submissionStateSignature(submission: Awaited<ReturnType<typeof readSubmission>>) {
+    if (!submission) return "";
+    return JSON.stringify([
+      submission.latest_report_id ?? "",
+      submission.status ?? "",
+      submission.recheck_count ?? "",
+      submission.appeal_count ?? "",
+      submission.updated_at ?? "",
+    ]);
+  }
+
+  async function readAppeal(appealId: string) {
+    const res = await fetch(`/api/appeals/${encodeURIComponent(appealId)}`, { cache: "no-store" });
+    const json = await res.json();
+    if (!res.ok || !json.ok || !json.data || typeof json.data !== "object") return null;
+    return json.data as { status?: unknown; resolved_at?: unknown; resolution_notes?: unknown };
+  }
+
+  function appealStateSignature(appeal: Awaited<ReturnType<typeof readAppeal>>) {
+    return appeal ? JSON.stringify([appeal.status ?? "", appeal.resolved_at ?? "", appeal.resolution_notes ?? ""]) : "";
   }
 
   function newestSubmissionId(ids: string[], before: Set<string>) {
@@ -117,7 +150,7 @@ export function TransactionStatus({
     return fresh.sort((a, b) => Number((b.match(/\d+$/) ?? ["0"])[0]) - Number((a.match(/\d+$/) ?? ["0"])[0]))[0];
   }
 
-  async function waitForAppliedRecord(builder: string, beforeCampaignIds: string[], beforeSubmissionIds: string[], beforeReportId: string): Promise<AppliedRecord> {
+  async function waitForAppliedRecord(builder: string, beforeCampaignIds: string[], beforeSubmissionIds: string[], beforeReportId: string, beforeSubmissionState: string, beforeAppealState: string): Promise<AppliedRecord> {
     const beforeCampaigns = new Set(beforeCampaignIds);
     const beforeSubmissions = new Set(beforeSubmissionIds);
     // A wallet receipt only proves the write was submitted. The UI advances only
@@ -144,6 +177,24 @@ export function TransactionStatus({
             const reportId = typeof submission?.latest_report_id === "string" ? submission.latest_report_id : "";
             if (reportId && reportId !== beforeReportId) {
               return { submissionId, reportId };
+            }
+          }
+        }
+        if (["request_recheck", "open_appeal", "record_human_decision"].includes(method)) {
+          const submissionId = values.submission_id?.trim();
+          if (submissionId) {
+            const submission = await readSubmission(submissionId);
+            if (submissionStateSignature(submission) !== beforeSubmissionState) {
+              return { submissionId };
+            }
+          }
+        }
+        if (method === "resolve_appeal") {
+          const appealId = values.appeal_id?.trim();
+          if (appealId) {
+            const appeal = await readAppeal(appealId);
+            if (appealStateSignature(appeal) !== beforeAppealState) {
+              return { appealId };
             }
           }
         }
@@ -180,7 +231,7 @@ export function TransactionStatus({
     }
     reconciliationInFlightRef.current = true;
     try {
-      const record = await waitForAppliedRecord(address, beforeCampaignIdsRef.current, beforeSubmissionIdsRef.current, beforeReportIdRef.current);
+      const record = await waitForAppliedRecord(address, beforeCampaignIdsRef.current, beforeSubmissionIdsRef.current, beforeReportIdRef.current, beforeSubmissionStateRef.current, beforeAppealStateRef.current);
       applyRecord(record);
       if (!Object.keys(record).length && state.stillSyncing) {
         retryTimerRef.current = window.setTimeout(() => {
@@ -235,11 +286,14 @@ export function TransactionStatus({
       localTxIdRef.current = localTxId;
       const beforeCampaignIds = method === "create_campaign" ? await readCampaignIds() : [];
       const beforeSubmissionIds = method === "submit_project" ? await readBuilderSubmissionIds(address) : [];
-      const beforeSubmission = method === "run_review" && values.submission_id ? await readSubmission(values.submission_id) : null;
+      const beforeSubmission = ["run_review", "request_recheck", "open_appeal", "record_human_decision"].includes(method) && values.submission_id ? await readSubmission(values.submission_id) : null;
       const beforeReportId = typeof beforeSubmission?.latest_report_id === "string" ? beforeSubmission.latest_report_id : "";
       beforeCampaignIdsRef.current = beforeCampaignIds;
       beforeSubmissionIdsRef.current = beforeSubmissionIds;
       beforeReportIdRef.current = beforeReportId;
+      beforeSubmissionStateRef.current = submissionStateSignature(beforeSubmission);
+      const beforeAppeal = method === "resolve_appeal" && values.appeal_id ? await readAppeal(values.appeal_id) : null;
+      beforeAppealStateRef.current = appealStateSignature(beforeAppeal);
 
       const preparedRes = await fetch("/api/tx/prepare", {
         method: "POST",
@@ -269,7 +323,7 @@ export function TransactionStatus({
       updateLocalTx(localTxId, { status: "state_pending" });
       notifyProofPilotMutation({ method, address, from: address, evmTx, genlayerTx });
       reconciliationInFlightRef.current = true;
-      const record = await waitForAppliedRecord(address, beforeCampaignIds, beforeSubmissionIds, beforeReportId);
+      const record = await waitForAppliedRecord(address, beforeCampaignIds, beforeSubmissionIds, beforeReportId, submissionStateSignature(beforeSubmission), appealStateSignature(beforeAppeal));
       reconciliationInFlightRef.current = false;
       if (Object.keys(record).length) {
         updateLocalTx(localTxId, { ...record, status: "state_applied" });
@@ -281,6 +335,7 @@ export function TransactionStatus({
         campaignId: record.campaignId ?? "",
         submissionId: record.submissionId ?? "",
         reportId: record.reportId ?? "",
+        appealId: record.appealId ?? "",
         stillSyncing: !Object.keys(record).length,
         error: "",
       });
@@ -311,7 +366,19 @@ export function TransactionStatus({
 
   const busy = ["preparing", "wallet", "sent", "receipt", "syncing"].includes(state.phase);
   const locked = busy || state.phase === "applied";
-  const appliedLabel = method === "create_campaign" ? "Campaign recorded on-chain" : method === "run_review" ? "Review report recorded on-chain" : "Submission recorded on-chain";
+  const appliedLabel = method === "create_campaign"
+    ? "Campaign recorded on-chain"
+    : method === "run_review"
+      ? "Review report recorded on-chain"
+      : method === "open_appeal"
+        ? "Appeal recorded on-chain"
+        : method === "request_recheck"
+          ? "Re-check request recorded on-chain"
+          : method === "resolve_appeal"
+            ? "Appeal resolution submitted on-chain"
+            : method === "record_human_decision"
+              ? "Human decision recorded on-chain"
+              : "Submission recorded on-chain";
   const phaseText = {
     idle: buttonLabel,
     preparing: "Preparing wallet transaction",

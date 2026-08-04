@@ -2,6 +2,8 @@
 
 ## Purpose
 
+> **Historical V9 planning audit.** This record predates the V10 governance extension. For the implemented V10 methods and authoritative workflow, see [GOVERNANCE_WORKFLOW.md](./GOVERNANCE_WORKFLOW.md), [API_SPEC.md](./API_SPEC.md), and [PERMISSIONS.md](./PERMISSIONS.md). Its “future extension” findings are retained as historical design context, not a statement of the V10 feature set.
+
 This is the final architecture consistency audit before implementing `contracts/proofpilot.py`. It checks the committed product, architecture, contract, protocol, security, API, testing, and frontend data docs for conflicts, scope drift, and first-deploy risk.
 
 ## Source Documents Reviewed

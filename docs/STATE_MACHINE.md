@@ -71,7 +71,7 @@ States:
 | `REVIEWED` | `RECHECK_REQUESTED` | Builder requests re-check | `request_recheck` | Builder or authorized reviewer |
 | `REVIEWED` | `APPEALED` | Builder opens appeal | `open_appeal` | Builder |
 | `RECHECK_REQUESTED` | `APPEALED` | Builder appeals latest report while re-check is pending | `open_appeal` | Builder |
-| `APPEALED` | `RECHECK_REQUESTED` | Appeal accepted for re-check | future appeal resolution method | Campaign owner or authorized reviewer |
+| `APPEALED` | `RECHECK_REQUESTED` | Appeal accepted or scheduled for re-check | `resolve_appeal` | Campaign owner |
 | any non-closed | `CLOSED` | Close submission | future close method | Campaign owner or authorized reviewer |
 
 ### Forbidden Transitions
@@ -107,14 +107,12 @@ States:
 | From | To | Trigger | Method | Actor |
 | --- | --- | --- | --- | --- |
 | none | `OPEN` | Open appeal | `open_appeal` | Builder |
-| `OPEN` | `RECHECK_SCHEDULED` | Approve appeal for re-check | future appeal resolution method | Campaign owner or authorized reviewer |
-| `OPEN` | `ACCEPTED` | Accept appeal without re-check | future appeal resolution method | Campaign owner or authorized reviewer |
-| `OPEN` | `REJECTED` | Reject appeal | future appeal resolution method | Campaign owner or authorized reviewer |
-| `RECHECK_SCHEDULED` | `ACCEPTED` | Re-check confirms appeal issue | future appeal resolution method | Campaign owner or authorized reviewer |
-| `RECHECK_SCHEDULED` | `REJECTED` | Re-check does not support appeal | future appeal resolution method | Campaign owner or authorized reviewer |
-| `OPEN` | `CLOSED` | Close without action | future appeal resolution method | Campaign owner or authorized reviewer |
-| `ACCEPTED` | `CLOSED` | Archive resolved appeal | future appeal resolution method | Campaign owner or authorized reviewer |
-| `REJECTED` | `CLOSED` | Archive resolved appeal | future appeal resolution method | Campaign owner or authorized reviewer |
+| `OPEN` | `RECHECK_SCHEDULED` | Schedule an appeal re-check | `resolve_appeal` | Campaign owner |
+| `OPEN` | `ACCEPTED` | Accept appeal and request a re-check | `resolve_appeal` | Campaign owner |
+| `OPEN` | `REJECTED` | Reject appeal | `resolve_appeal` | Campaign owner |
+| `OPEN` | `CLOSED` | Close appeal without a re-check | `resolve_appeal` | Campaign owner |
+
+The V10 candidate deliberately has one final resolution action for an `OPEN` appeal. Follow-on archival or changing a resolved appeal would require a new append-only governance record and is not implemented.
 
 ### Forbidden Transitions
 

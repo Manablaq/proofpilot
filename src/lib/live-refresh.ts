@@ -16,6 +16,7 @@ export type ProofPilotMutationPayload = {
   campaignId?: string;
   submissionId?: string;
   reportId?: string;
+  appealId?: string;
   timestamp: number;
 };
 

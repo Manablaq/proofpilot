@@ -5,7 +5,7 @@ from genlayer import *
 from dataclasses import dataclass
 import json
 
-# ProofPilot V9 candidate. Deploy as a new contract; historical deployments remain separate.
+# ProofPilot V10 candidate. Deploy as a new contract; historical deployments remain separate.
 
 
 DRAFT = "DRAFT"
@@ -51,6 +51,8 @@ RISK_LEVELS = [LOW, MEDIUM, HIGH, CRITICAL]
 CONFIDENCE_LEVELS = [LOW, MEDIUM, HIGH]
 HUMAN_STATUSES = [PENDING, APPROVED, CHANGES_REQUESTED, REJECTED, OVERRIDDEN]
 APPEAL_STATUSES = [OPEN, RECHECK_SCHEDULED, ACCEPTED, REJECTED, CLOSED]
+HUMAN_FINAL_STATUSES = [APPROVED, CHANGES_REQUESTED, REJECTED, OVERRIDDEN]
+APPEAL_RESOLUTION_STATUSES = [RECHECK_SCHEDULED, ACCEPTED, REJECTED, CLOSED]
 
 RUBRIC_VERSION = "rubric_v4"
 RUBRIC = {
@@ -562,6 +564,7 @@ class Appeal:
     new_evidence_json: str
     status: str
     resolution_notes: str
+    resolved_by: str
     created_at: str
     resolved_at: str
 
@@ -593,7 +596,9 @@ class ProofPilot(gl.Contract):
     report_ids_by_submission: TreeMap[str, str]
     report_ids_by_campaign: TreeMap[str, str]
     appeal_ids_by_submission: TreeMap[str, str]
+    appeal_ids_by_report: TreeMap[str, str]
     human_decision_ids_by_submission: TreeMap[str, str]
+    human_decision_ids_by_report: TreeMap[str, str]
     campaign_ids: DynArray[str]
     submission_ids: DynArray[str]
     report_ids: DynArray[str]
@@ -651,6 +656,35 @@ class ProofPilot(gl.Contract):
         if not isinstance(x, dict):
             raise gl.vm.UserError(f + " obj")
         return self._j(x)
+
+    def _appeal_evidence(self, raw: str) -> str:
+        """Accept only small, public, review-relevant appeal evidence.
+
+        Appeal notes are not fed directly into the consensus review. A later
+        re-check fetches the submission's declared evidence fields again, so an
+        appeal cannot smuggle arbitrary instructions or private material into
+        validator context.
+        """
+        try:
+            evidence = json.loads(raw if raw and raw.strip() else "{}")
+        except Exception:
+            raise gl.vm.UserError("evidence json")
+        if not isinstance(evidence, dict):
+            raise gl.vm.UserError("evidence obj")
+        if set(evidence.keys()) - set(["public_urls", "notes"]):
+            raise gl.vm.UserError("evidence keys")
+        urls = evidence.get("public_urls", [])
+        notes = evidence.get("notes", "")
+        if not isinstance(urls, list) or len(urls) > 5:
+            raise gl.vm.UserError("evidence urls")
+        clean_urls = []
+        for url in urls:
+            if not isinstance(url, str) or len(url) > URL_MAX or " " in url or not url.lower().startswith("https://"):
+                raise gl.vm.UserError("evidence url")
+            clean_urls.append(url)
+        if not isinstance(notes, str) or len(notes) > NOTE_MAX:
+            raise gl.vm.UserError("evidence notes")
+        return self._j({"public_urls": clean_urls, "notes": notes})
 
     def _rubric(self, raw: str) -> str:
         self._max(raw, JSON_MAX, "rubric")
@@ -1014,15 +1048,17 @@ class ProofPilot(gl.Contract):
             raise gl.vm.UserError("limit")
         self._need(reason, "reason")
         self._max(reason, NOTE_MAX, "reason")
-        ev = self._obj(new_evidence_json, "evidence")
+        self._max(new_evidence_json, JSON_MAX, "evidence")
+        ev = self._appeal_evidence(new_evidence_json)
         aid = self._next("appeal_counter", "appeal")
         now = self._now()
         a = {"appeal_id": aid, "submission_id": submission_id, "campaign_id": s["campaign_id"],
              "builder": s["builder"], "report_id": report_id, "reason": reason, "new_evidence_json": ev,
-             "status": OPEN, "resolution_notes": "", "created_at": now, "resolved_at": ""}
+             "status": OPEN, "resolution_notes": "", "resolved_by": "", "created_at": now, "resolved_at": ""}
         self.appeals[aid] = self._j(a)
         self.appeal_ids.append(aid)
         self.appeal_ids_by_submission[submission_id] = self._arr_add(self.appeal_ids_by_submission.get(submission_id, "[]"), aid)
+        self.appeal_ids_by_report[report_id] = self._arr_add(self.appeal_ids_by_report.get(report_id, "[]"), aid)
         s["appeal_count"] = int(s["appeal_count"]) + 1
         s["status"] = APPEALED
         s["updated_at"] = now
@@ -1034,6 +1070,47 @@ class ProofPilot(gl.Contract):
         return aid
 
     @gl.public.write
+    def resolve_appeal(self, appeal_id: str, resolution_status: str, resolution_notes: str) -> str:
+        """Record a campaign-owner appeal outcome without mutating the appealed report.
+
+        An accepted appeal or scheduled re-check creates a new review opportunity;
+        the prior report and its evidence snapshot remain public historical records.
+        """
+        caller = str(gl.message.sender_address)
+        a = self._load(self.appeals, appeal_id, "no appeal")
+        s = self._load(self.submissions, a["submission_id"], "no submission")
+        c = self._load(self.campaigns, a["campaign_id"], "no campaign")
+        if caller != c["owner"]:
+            raise gl.vm.UserError("auth")
+        if a["status"] != OPEN:
+            raise gl.vm.UserError("appeal resolved")
+        self._enum(resolution_status, APPEAL_RESOLUTION_STATUSES, "appeal resolution")
+        self._need(resolution_notes, "resolution notes")
+        self._max(resolution_notes, NOTE_MAX, "resolution notes")
+
+        if resolution_status in [ACCEPTED, RECHECK_SCHEDULED]:
+            if int(s["recheck_count"]) >= self._policy_int(c, "max_rechecks", 2):
+                raise gl.vm.UserError("recheck limit")
+            s["recheck_count"] = int(s["recheck_count"]) + 1
+            s["status"] = RECHECK_REQUESTED
+            p = self._profile(s["builder"])
+            p["recheck_count"] = int(p["recheck_count"]) + 1
+            p["updated_at"] = self._now()
+            self._save_profile(p)
+        else:
+            s["status"] = REVIEWED
+
+        now = self._now()
+        a["status"] = resolution_status
+        a["resolution_notes"] = resolution_notes
+        a["resolved_by"] = caller
+        a["resolved_at"] = now
+        s["updated_at"] = now
+        self.appeals[appeal_id] = self._j(a)
+        self.submissions[s["submission_id"]] = self._j(s)
+        return appeal_id
+
+    @gl.public.write
     def record_human_decision(self, submission_id: str, report_id: str, decision_status: str, notes: str = "") -> str:
         caller = str(gl.message.sender_address)
         s = self._load(self.submissions, submission_id, "no submission")
@@ -1041,7 +1118,7 @@ class ProofPilot(gl.Contract):
         r = self._load(self.reports, report_id, "no report")
         if r["submission_id"] != submission_id or caller != c["owner"]:
             raise gl.vm.UserError("auth")
-        self._enum(decision_status, HUMAN_STATUSES, "decision")
+        self._enum(decision_status, HUMAN_FINAL_STATUSES, "decision")
         self._max(notes, NOTE_MAX, "notes")
         hid = self._next("human_decision_counter", "human_decision")
         h = {"human_decision_id": hid, "submission_id": submission_id, "campaign_id": s["campaign_id"],
@@ -1050,6 +1127,15 @@ class ProofPilot(gl.Contract):
         self.human_decisions[hid] = self._j(h)
         self.human_decision_ids.append(hid)
         self.human_decision_ids_by_submission[submission_id] = self._arr_add(self.human_decision_ids_by_submission.get(submission_id, "[]"), hid)
+        self.human_decision_ids_by_report[report_id] = self._arr_add(self.human_decision_ids_by_report.get(report_id, "[]"), hid)
+        r["human_decision_id"] = hid
+        self.reports[report_id] = self._j(r)
+        if decision_status in [APPROVED, REJECTED, OVERRIDDEN]:
+            s["status"] = CLOSED
+        elif decision_status == CHANGES_REQUESTED:
+            s["status"] = RECHECK_REQUESTED
+        s["updated_at"] = self._now()
+        self.submissions[submission_id] = self._j(s)
         return hid
 
     @gl.public.view
@@ -1087,6 +1173,22 @@ class ProofPilot(gl.Contract):
         return self.appeals.get(appeal_id, self._j({"error": "Appeal not found"}))
 
     @gl.public.view
+    def get_human_decision(self, human_decision_id: str) -> str:
+        return self.human_decisions.get(human_decision_id, self._j({"error": "Human decision not found"}))
+
+    @gl.public.view
+    def get_report_decisions(self, report_id: str) -> str:
+        """Return the immutable report with all linked appeals and human decisions."""
+        r = self._load(self.reports, report_id, "no report")
+        appeals = []
+        decisions = []
+        for aid in json.loads(self.appeal_ids_by_report.get(report_id, "[]")):
+            appeals.append(self._load(self.appeals, aid, "no appeal"))
+        for hid in json.loads(self.human_decision_ids_by_report.get(report_id, "[]")):
+            decisions.append(self._load(self.human_decisions, hid, "no human decision"))
+        return self._j({"report": r, "appeals": appeals, "human_decisions": decisions})
+
+    @gl.public.view
     def list_campaigns(self, offset: int = 0, limit: int = 50) -> str:
         self._page_ok(offset, limit)
         a = []
@@ -1115,5 +1217,29 @@ class ProofPilot(gl.Contract):
             return self._page(self.report_ids_by_campaign.get(campaign_id, "[]"), offset, limit)
         a = []
         for x in self.report_ids:
+            a.append(x)
+        return self._j(a[offset:offset + limit])
+
+    @gl.public.view
+    def list_appeals(self, submission_id: str = "", report_id: str = "", offset: int = 0, limit: int = 50) -> str:
+        self._page_ok(offset, limit)
+        if report_id:
+            return self._page(self.appeal_ids_by_report.get(report_id, "[]"), offset, limit)
+        if submission_id:
+            return self._page(self.appeal_ids_by_submission.get(submission_id, "[]"), offset, limit)
+        a = []
+        for x in self.appeal_ids:
+            a.append(x)
+        return self._j(a[offset:offset + limit])
+
+    @gl.public.view
+    def list_human_decisions(self, submission_id: str = "", report_id: str = "", offset: int = 0, limit: int = 50) -> str:
+        self._page_ok(offset, limit)
+        if report_id:
+            return self._page(self.human_decision_ids_by_report.get(report_id, "[]"), offset, limit)
+        if submission_id:
+            return self._page(self.human_decision_ids_by_submission.get(submission_id, "[]"), offset, limit)
+        a = []
+        for x in self.human_decision_ids:
             a.append(x)
         return self._j(a[offset:offset + limit])

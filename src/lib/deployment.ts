@@ -1,4 +1,6 @@
 export const deployment = {
+  protocolVersion: "v9",
+  governanceWorkflowEnabled: false,
   contractAddress: "0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504",
   deploymentTx:
     "0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f",

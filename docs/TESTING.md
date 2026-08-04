@@ -4,7 +4,7 @@
 
 ProofPilot review outcomes must be credible, repeatable, and safe against adversarial evidence. Testing should cover contract state transitions, GenLayer web access behavior, strict JSON review output, scoring constraints, prompt-injection resistance, and failure handling.
 
-This document defines the intended testing strategy for future implementation. No frontend or contract code is included in this phase.
+This document defines the contract and frontend testing strategy. The repository includes architecture tests and a local behavioral contract-workflow test using a minimal GenLayer storage/decorator shim. That local shim exercises contract methods and state transitions, but it does not replace a signed Studio/Bradbury end-to-end test or validator-consensus test.
 
 ## Test Layers
 
@@ -130,11 +130,14 @@ Each documented contract method should have success and failure tests:
 - `run_review`
 - `request_recheck`
 - `record_human_decision`
+- `resolve_appeal`
 - `get_campaign`
 - `get_submission`
 - `get_report`
 - `get_latest_report`
 - `get_builder_profile`
+- `get_human_decision`
+- `get_report_decisions`
 - `list_campaigns`
 - `list_submissions`
 - `list_reports`
@@ -157,6 +160,10 @@ Appeal tests should verify:
 - Unauthorized users cannot appeal another builder's submission unless allowed by campaign policy.
 - Appeal resolution does not mutate the appealed report.
 - Human decision records remain separate from AI consensus reports.
+- Only campaign owners can resolve open appeals.
+- Accepted or scheduled appeals consume one configured re-check opportunity and transition the submission to `RECHECK_REQUESTED`.
+- Rejected or closed appeals return the submission to `REVIEWED` without mutating the report.
+- Manipulated appeal JSON (for example an `instructions` key) is rejected; only bounded public HTTPS URLs and a bounded note are accepted.
 
 ## Test Fixtures
 
@@ -183,4 +190,5 @@ Before ProofPilot is used for real campaign decisions:
 - Fetch failures are represented in reports and scored conservatively.
 - Historical reports are immutable after creation.
 - Human decisions are auditable and separate from AI reports.
+- V10 governance workflows are exercised on a fresh deployment with a builder wallet and a campaign-owner wallet before any production claim.
 - Builder profile aggregation is deterministic and explainable.
