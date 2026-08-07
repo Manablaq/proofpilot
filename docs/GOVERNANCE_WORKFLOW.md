@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-This document specifies the **V10 candidate** governance extension. It is source-level documentation until a new contract is deployed and tested on GenLayer Bradbury. It does not retroactively change the finalized V9 contract or its public review fixture.
+This document specifies ProofPilot's report-linked governance workflow. It is live on the finalized [Bradbury deployment](https://explorer-bradbury.genlayer.com/address/0x4FCf070e2dB9Fc0f54f7849BA58260FedD881D6A), with the recorded acceptance flow summarized in [V10_GOVERNANCE_ACCEPTANCE.md](./V10_GOVERNANCE_ACCEPTANCE.md). It does not retroactively change historical deployments or their public fixtures.
 
 ProofPilot keeps two distinct record classes:
 
@@ -19,7 +19,7 @@ Governance records never rewrite the consensus report, its score, or its evidenc
 | Campaign owner | Run a review, resolve an open appeal, and record a human decision for the campaign. |
 | Public reader | Read the report, linked appeals, and linked human decisions without a wallet. |
 
-The V10 candidate does not introduce a delegated reviewer allowlist. The campaign owner is the only concrete human decision-maker.
+The current deployment does not introduce a delegated reviewer allowlist. The campaign owner is the only concrete human decision-maker.
 
 ## State transitions
 
@@ -62,9 +62,9 @@ This record is a program-governance decision, not a replacement for an AI consen
 
 `get_report_decisions(report_id)` returns the immutable report plus every appeal and human decision linked to it. The browser dApp exposes this same record through `/api/reports/{reportId}/decisions` and the public report page’s **Recorded governance decisions** section.
 
-## Required Bradbury acceptance test
+## Bradbury acceptance test
 
-Before configuring a V10 address as live:
+The following sequence was completed against the finalized Bradbury deployment:
 
 1. Deploy the exact committed V10 source as a fresh Studio or CLI deployment.
 2. Wait for the deployment to finalize, then read `list_campaigns` from accepted state.

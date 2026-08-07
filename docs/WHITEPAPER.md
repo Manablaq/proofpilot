@@ -1,6 +1,6 @@
 # ProofPilot Whitepaper
 
-> **Release note.** This paper describes the protocol design. The historical V9 Bradbury deployment provides the evidence-review flow. The report-linked appeal-resolution and human-decision flow is implemented in the V10 candidate and must be freshly deployed and acceptance-tested before it is described as live. See [GOVERNANCE_WORKFLOW.md](./GOVERNANCE_WORKFLOW.md).
+> **Release note.** This paper describes the protocol design. The report-linked appeal-resolution and human-decision workflow is live on the finalized [Bradbury deployment](https://explorer-bradbury.genlayer.com/address/0x4FCf070e2dB9Fc0f54f7849BA58260FedD881D6A). See [GOVERNANCE_WORKFLOW.md](./GOVERNANCE_WORKFLOW.md) and the [acceptance record](./V10_GOVERNANCE_ACCEPTANCE.md). Historical deployments remain historical evidence only.
 
 ## Abstract
 
@@ -41,7 +41,7 @@ The core flow is:
 6. The contract validates strict JSON output and stores a review report.
 7. Builder reputation is updated from accepted report data.
 8. Builders may request re-checks or open appeals.
-9. In the V10 candidate, the campaign owner may resolve an appeal or record a separate final decision.
+9. The campaign owner may resolve an appeal or record a separate final decision.
 
 ## Actors
 
@@ -49,7 +49,7 @@ Protocol owner manages protocol-level configuration in future versions. The Phas
 
 Campaign owner creates and administers a campaign, configures review policy, resolves appeals, and records human decisions.
 
-Delegated reviewers are a planned governance extension. They are not an available V10 role.
+Delegated reviewers are a planned governance extension. They are not an available role in the current deployment.
 
 Builder submits project evidence, requests re-checks, and opens appeals for their submissions.
 

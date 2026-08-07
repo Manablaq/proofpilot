@@ -1,26 +1,27 @@
 # ProofPilot Deployments
 
-## Final Bradbury V7 Deployment
+## Live Bradbury Governance Deployment
 
 | Field | Value |
 | --- | --- |
 | Network | GenLayer Bradbury Testnet |
 | RPC | `https://rpc-bradbury.genlayer.com` |
-| Contract address | `0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b` |
-| Deployment transaction hash | `0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a` |
+| Contract address | `0x4FCf070e2dB9Fc0f54f7849BA58260FedD881D6A` |
+| Deployment transaction hash | `0x2a568e2f999401ca3f53de5df0f03f8ea01762feaf0670bb0897416476570d0c` |
 | Deployment status | `FINALIZED` |
 | Stored outcome | `accepted` |
-| Post-deployment read | `list_campaigns(0, 1)` returned `[]` |
-| V7 fixture state | No V7 campaign, submission, or review has been claimed yet |
+| Post-deployment read | `list_campaigns(0, 50)` returned `[]` before the acceptance fixture was created |
+| Governance fixture | `campaign_1` → `submission_1` → `report_1` → `appeal_1` → `report_2` → `human_decision_1` |
 
-- Contract: https://explorer-bradbury.genlayer.com/address/0x3764DB868fd18Bd2987eD19B85E15Bc487Df841b
-- Deployment transaction: https://explorer-bradbury.genlayer.com/tx/0xe082ba35f334a4bfa648d3150d427639fcd10e3c8181c1dab5bd3341b374373a
+- Contract: https://explorer-bradbury.genlayer.com/address/0x4FCf070e2dB9Fc0f54f7849BA58260FedD881D6A
+- Deployment transaction: https://explorer-bradbury.genlayer.com/tx/0x2a568e2f999401ca3f53de5df0f03f8ea01762feaf0670bb0897416476570d0c
+- Acceptance record: [V10_GOVERNANCE_ACCEPTANCE.md](V10_GOVERNANCE_ACCEPTANCE.md)
 
-The browser frontend must be redeployed after this repository change so its public production build uses the finalized V7 address. The V7 release is not portal-submission-ready until the end-to-end evidence fixture in [`V7_RELEASE_CHECKLIST.md`](V7_RELEASE_CHECKLIST.md) is complete.
+The browser frontend is configured for this finalized contract. Redeploy the public Vercel build after the corresponding source commit is pushed. The acceptance record documents the completed governance workflow; it does not transform a testnet deployment into a claim of production-network security or legal finality.
 
 ## Historical V6 Deployment
 
-> This section records the historical V6 Bradbury smoke test only. It is not evidence that V7 has completed a campaign or review.
+> This section records a historical V6 Bradbury smoke test only. It is not evidence for the live governance deployment above.
 
 ### Final Bradbury V6 Deployment
 

@@ -10,7 +10,7 @@ Protocol owner manages protocol-level configuration in future extensions. This a
 
 Campaign owner creates a campaign, controls campaign policy, resolves open appeals, and records human decisions.
 
-The V10 candidate does not implement delegated reviewer roles or reviewer allowlists. References to an “authorized reviewer” below describe a future extension, not an available V10 permission.
+The current deployment does not implement delegated reviewer roles or reviewer allowlists. References to an “authorized reviewer” below describe a future extension, not an available permission.
 
 Builder creates submissions, requests re-checks for their submissions, and opens appeals for their reports.
 

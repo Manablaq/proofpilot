@@ -189,5 +189,5 @@ Before ProofPilot is used for real campaign decisions:
 - Fetch failures are represented in reports and scored conservatively.
 - Historical reports are immutable after creation.
 - Human decisions are auditable and separate from AI reports.
-- V10 governance workflows are exercised on a fresh deployment with a builder wallet and a campaign-owner wallet before any production claim.
+- Governance workflows were exercised on the finalized Bradbury deployment with distinct builder and campaign-owner wallets; see [V10_GOVERNANCE_ACCEPTANCE.md](./V10_GOVERNANCE_ACCEPTANCE.md). Repeat the same sequence for every future deployment before making a live-workflow claim.
 - Builder profile aggregation is deterministic and explainable.

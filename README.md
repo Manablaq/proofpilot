@@ -2,9 +2,7 @@
 
 AI consensus review for the builder economy.
 
-> **Release status — V9 evidence review is finalized on Bradbury:** [contract `0x5E32…8504`](https://explorer-bradbury.genlayer.com/address/0x5E327aC97d3462B8c7B4bb4c3C4BE75b954f8504) was finalized from [deployment `0xa316…073f`](https://explorer-bradbury.genlayer.com/tx/0xa3168dddac8b51aee73a129188ac987eecb123ed8c559b0ac294952452fe073f). Its public fixture (`campaign_1` → `submission_1` → `report_1`) reached `100/100`, `READY_FOR_REVIEW`, `LOW` risk, and `APPROVE_FOR_HUMAN_REVIEW`; its [review transaction `0xfdfb…9be4`](https://explorer-bradbury.genlayer.com/tx/0xfdfb62a1e2c883ab89b8a705282a3c11c3ad1027a8984a0df4ae67605cd59be4) is finalized. This is a recommendation for a human program owner, not an automatic grant or legal decision.
->
-> **Governance workflow candidate:** the source in this repository adds report-linked re-check, appeal-resolution, and human-decision records. These methods are **not** present at the historical V9 address. They require a fresh V10 Studio/Bradbury deployment and an end-to-end test before they can be described as live.
+> **Live Bradbury release:** [contract `0x4FCf…1D6A`](https://explorer-bradbury.genlayer.com/address/0x4FCf070e2dB9Fc0f54f7849BA58260FedD881D6A) was finalized from [deployment `0x2a56…0d0c`](https://explorer-bradbury.genlayer.com/tx/0x2a568e2f999401ca3f53de5df0f03f8ea01762feaf0670bb0897416476570d0c). A distinct-wallet Bradbury acceptance flow finalized campaign creation, evidence review, an `OPEN` appeal, appeal resolution to `RECHECK_REQUESTED`, a second immutable review report, an `APPROVED` human decision, and public report-linked decision retrieval. See the [acceptance record](docs/V10_GOVERNANCE_ACCEPTANCE.md). A recommendation remains input to a human program owner, not an automatic grant or legal decision.
 
 ProofPilot uses GenLayer Intelligent Contracts to verify live project evidence, score submissions against transparent rubrics, and publish on-chain review reports for builders, grants, hackathons, and bounty programs.
 
@@ -34,7 +32,7 @@ ProofPilot is designed as a flagship GenLayer application, not a minimal demo. T
 - Evidence snapshots captured through GenLayer web access
 - AI consensus review reports with strict JSON output
 - Builder reputation profiles derived from review history
-- Report-linked re-check, appeal-resolution, and human-decision flows (V10 candidate; see release status above)
+- Report-linked re-check, appeal-resolution, and human-decision flows, finalized on Bradbury
 
 ## Core Workflow
 
@@ -45,8 +43,8 @@ ProofPilot is designed as a flagship GenLayer application, not a minimal demo. T
 5. Validators independently fetch the same compact evidence and derive the canonical score, status, recommendation, risk, and confidence from observable criteria. AI commentary never changes the stored decision.
 6. The strict JSON review report is stored publicly and linked to the campaign, submission, and builder profile.
 7. Contract and deployment identifiers are fetched from their submitted explorer resources. A category is forced to zero and recorded as unverified when its submitted identifier is not present in the fetched response. The report labels these as independent checks and does not claim deployment linkage.
-8. On V10, a builder may request a re-check or open an appeal with bounded public HTTPS evidence.
-9. On V10, a campaign owner can resolve that appeal or record a separate final human decision. Both records are retrievable from the linked public report and never overwrite the consensus report.
+8. A builder may request a re-check or open an appeal with bounded public HTTPS evidence.
+9. A campaign owner can resolve that appeal or record a separate final human decision. Both records are retrievable from the linked public report and never overwrite the consensus report.
 
 ## Rubric V1
 
@@ -182,10 +180,11 @@ To verify reports manually, read `get_report("report_1")`, `get_submission("subm
 - [Product Spec](docs/PRODUCT_SPEC.md): product goals, users, workflows, data models, statuses, and launch scope.
 - [Architecture](docs/ARCHITECTURE.md): system components, GenLayer contract responsibilities, evidence flow, storage model, and method design.
 - [Testing](docs/TESTING.md): test strategy and scope.
-- [Governance workflow](docs/GOVERNANCE_WORKFLOW.md): V10 transition rules, permissions, public decision ledger, and deployment test plan.
+- [Governance workflow](docs/GOVERNANCE_WORKFLOW.md): transition rules, permissions, and public decision ledger.
+- [Bradbury governance acceptance](docs/V10_GOVERNANCE_ACCEPTANCE.md): finalized end-to-end verification record.
 - [V9 release checklist](docs/V9_RELEASE_CHECKLIST.md): historical V9 deployment and evidence checks.
 - [Review Strategy](docs/REVIEW_STRATEGY.md): rubric design, scoring guidance, prompt safety, consensus expectations, and appeal handling.
 
 ## Current Repository Status
 
-This repository contains the finalized V9 evidence-review source and fixture, plus a V10 governance-workflow candidate with executable local transition tests. The browser frontend remains configured for the finalized V9 Bradbury address until a V10 contract is deployed, finalized, tested, and explicitly configured.
+This repository retains historical releases for audit context. The browser frontend is configured for the finalized Bradbury contract above, whose governance workflow has been exercised end-to-end with executable local transition tests and an on-chain acceptance flow.
