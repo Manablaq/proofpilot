@@ -33,7 +33,7 @@ test("validators independently derive the canonical source-grounded decision", (
 
 test("AI commentary is bounded but cannot change consensus-critical scoring", () => {
   assert.match(source, /def pp_narrative\(s: dict, facts: dict\)/);
-  assert.match(source, /Best-effort AI context; malformed or unavailable AI output never aborts review/);
+  assert.match(source, /except Exception:\n        return fallback/);
   assert.match(source, /scores = \{/);
   assert.match(source, /"live_app_availability": rubric\["live_app_availability"\] if facts\["live_app_reachable"\] else 0/);
 });

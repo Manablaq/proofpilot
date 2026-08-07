@@ -136,7 +136,6 @@ Each documented contract method should have success and failure tests:
 - `get_report`
 - `get_latest_report`
 - `get_builder_profile`
-- `get_human_decision`
 - `get_report_decisions`
 - `list_campaigns`
 - `list_submissions`

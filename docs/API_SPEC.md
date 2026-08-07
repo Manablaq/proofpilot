@@ -252,14 +252,6 @@ Error conditions: missing appeal.
 
 Frontend usage notes: Link appeals from submission and report pages.
 
-### `get_human_decision`
-
-Type: read
-
-Parameters: `human_decision_id: str`
-
-Return type: serialized `HumanDecision` JSON.
-
 ### `get_report_decisions`
 
 Type: read

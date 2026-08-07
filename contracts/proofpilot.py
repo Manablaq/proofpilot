@@ -2,7 +2,6 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 
 from genlayer import *
-from dataclasses import dataclass
 import json
 
 # ProofPilot V10 candidate. Deploy as a new contract; historical deployments remain separate.
@@ -112,7 +111,6 @@ DEFAULT_POLICY = {"review_trigger": "campaign_owner", "max_rechecks": 2, "max_ap
 
 
 def pp_rubric(raw: str) -> dict:
-    """Return the campaign's canonical, executable 100-point rubric."""
     if not raw or not str(raw).strip() or str(raw).strip() == "{}":
         return dict(RUBRIC)
     try:
@@ -300,13 +298,6 @@ def pp_snapshot_facts(s: dict, facts: dict) -> dict:
 
 
 def pp_short_list(v, n: int) -> list:
-    """Normalize narrative output instead of aborting a consensus round over prose length.
-
-    LLM prose is non-deterministic. These fields are explanatory only: rubric values,
-    evidence facts, and the final status remain separately validated below. Keeping the
-    text bounded makes the stored report safe without turning a valid review into a
-    UserError merely because a validator used a longer sentence.
-    """
     if not isinstance(v, list):
         return []
     out = []
@@ -329,12 +320,6 @@ def pp_status(total: int):
 
 
 def pp_narrative_prompt(s: dict, facts: dict) -> str:
-    """Ask the LLM for non-decision commentary only.
-
-    Scores and recommendations are intentionally excluded. They are derived from
-    independently fetched observable facts below, so natural LLM variance cannot
-    determine whether a transaction reaches consensus.
-    """
     meta = {"project_name": s["project_name"], "summary": s["summary"]}
     schema = {"findings": [], "risks": [], "missing_evidence": []}
     return f"""SYSTEM:
@@ -364,7 +349,6 @@ def pp_fallback_narrative(facts: dict) -> dict:
 
 
 def pp_narrative(s: dict, facts: dict) -> dict:
-    """Best-effort AI context; malformed or unavailable AI output never aborts review."""
     fallback = pp_fallback_narrative(facts)
     try:
         raw = gl.nondet.exec_prompt(pp_narrative_prompt(s, facts), response_format="json")
@@ -381,11 +365,6 @@ def pp_narrative(s: dict, facts: dict) -> dict:
 
 
 def pp_deterministic_review(facts: dict, rubric: dict, narrative: dict) -> dict:
-    """Build the authoritative review from observable facts only.
-
-    Validators independently fetch the same sources and rebuild this decision.
-    AI output remains useful public context, but is not a consensus-critical score.
-    """
     readme_signals = (facts["github_readme_reachable"] and facts["github_readme_mentions_proofpilot"]
                       and facts["github_readme_mentions_genlayer"] and facts["github_readme_mentions_builder_review"])
     live_signals = facts["live_app_reachable"] and facts["live_app_mentions_proofpilot"] and facts["live_app_mentions_ai_consensus"]
@@ -420,7 +399,6 @@ def pp_deterministic_review(facts: dict, rubric: dict, narrative: dict) -> dict:
 
 
 def pp_review_matches_facts(leader_review: dict, facts: dict, rubric: dict) -> bool:
-    """Source-grounded validation of the leader's consensus-critical decision."""
     if not isinstance(leader_review, dict):
         return False
     narrative = {k: leader_review.get(k, []) for k in ["findings", "risks", "missing_evidence"]}
@@ -437,12 +415,6 @@ def pp_run_review(s: dict, rubric: dict) -> dict:
 
 
 def pp_compare_review(s: dict, rubric: dict, leaders_res) -> bool:
-    """Validators independently fetch evidence and derive the stored decision.
-
-    This follows GenLayer's source-grounded non-comparative pattern: prose may vary,
-    but the decision can only be accepted when the validator's own evidence produces
-    the same canonical scores, status, recommendation, risk, and confidence.
-    """
     if not isinstance(leaders_res, gl.vm.Return):
         return False
     try:
@@ -451,135 +423,6 @@ def pp_compare_review(s: dict, rubric: dict, leaders_res) -> bool:
         return isinstance(leader, dict) and pp_review_matches_facts(leader.get("review"), own_facts, rubric)
     except Exception:
         return False
-
-
-@allow_storage
-@dataclass
-class Campaign:
-    campaign_id: str
-    owner: str
-    title: str
-    description: str
-    rubric_version: str
-    custom_rubric_json: str
-    submission_requirements_json: str
-    review_policy_json: str
-    status: str
-    created_at: str
-    updated_at: str
-
-
-@allow_storage
-@dataclass
-class Submission:
-    submission_id: str
-    campaign_id: str
-    builder: str
-    project_name: str
-    summary: str
-    live_app_url: str
-    github_repo_url: str
-    docs_url: str
-    contract_address: str
-    deployment_tx_hash: str
-    reviewer_feedback_text: str
-    fixes_explanation: str
-    status: str
-    latest_report_id: str
-    review_count: int
-    recheck_count: int
-    appeal_count: int
-    created_at: str
-    updated_at: str
-
-
-@allow_storage
-@dataclass
-class EvidenceSnapshot:
-    snapshot_id: str
-    submission_id: str
-    campaign_id: str
-    builder: str
-    source_urls_json: str
-    fetch_results_json: str
-    live_app_evidence: str
-    github_evidence: str
-    docs_evidence: str
-    contract_address_evidence: str
-    deployment_tx_evidence: str
-    feedback_evidence: str
-    warnings_json: str
-    created_at: str
-
-
-@allow_storage
-@dataclass
-class ReviewReport:
-    report_id: str
-    submission_id: str
-    campaign_id: str
-    builder: str
-    snapshot_id: str
-    rubric_version: str
-    scores_json: str
-    total_score: int
-    status: str
-    recommendation: str
-    risk_level: str
-    confidence: str
-    findings_json: str
-    risks_json: str
-    missing_evidence_json: str
-    fetch_failures_json: str
-    raw_review_json: str
-    human_decision_id: str
-    created_at: str
-
-
-@allow_storage
-@dataclass
-class BuilderProfile:
-    builder: str
-    display_name: str
-    submission_count: int
-    review_count: int
-    approved_count: int
-    average_score: int
-    latest_report_ids_json: str
-    campaign_history_json: str
-    appeal_count: int
-    recheck_count: int
-    updated_at: str
-
-
-@allow_storage
-@dataclass
-class Appeal:
-    appeal_id: str
-    submission_id: str
-    campaign_id: str
-    builder: str
-    report_id: str
-    reason: str
-    new_evidence_json: str
-    status: str
-    resolution_notes: str
-    resolved_by: str
-    created_at: str
-    resolved_at: str
-
-
-@allow_storage
-@dataclass
-class HumanDecision:
-    human_decision_id: str
-    submission_id: str
-    campaign_id: str
-    report_id: str
-    reviewer: str
-    decision_status: str
-    notes: str
-    created_at: str
 
 
 class ProofPilot(gl.Contract):
@@ -658,13 +501,6 @@ class ProofPilot(gl.Contract):
         return self._j(x)
 
     def _appeal_evidence(self, raw: str) -> str:
-        """Accept only small, public, review-relevant appeal evidence.
-
-        Appeal notes are not fed directly into the consensus review. A later
-        re-check fetches the submission's declared evidence fields again, so an
-        appeal cannot smuggle arbitrary instructions or private material into
-        validator context.
-        """
         try:
             evidence = json.loads(raw if raw and raw.strip() else "{}")
         except Exception:
@@ -1071,11 +907,6 @@ class ProofPilot(gl.Contract):
 
     @gl.public.write
     def resolve_appeal(self, appeal_id: str, resolution_status: str, resolution_notes: str) -> str:
-        """Record a campaign-owner appeal outcome without mutating the appealed report.
-
-        An accepted appeal or scheduled re-check creates a new review opportunity;
-        the prior report and its evidence snapshot remain public historical records.
-        """
         caller = str(gl.message.sender_address)
         a = self._load(self.appeals, appeal_id, "no appeal")
         s = self._load(self.submissions, a["submission_id"], "no submission")
@@ -1173,12 +1004,7 @@ class ProofPilot(gl.Contract):
         return self.appeals.get(appeal_id, self._j({"error": "Appeal not found"}))
 
     @gl.public.view
-    def get_human_decision(self, human_decision_id: str) -> str:
-        return self.human_decisions.get(human_decision_id, self._j({"error": "Human decision not found"}))
-
-    @gl.public.view
     def get_report_decisions(self, report_id: str) -> str:
-        """Return the immutable report with all linked appeals and human decisions."""
         r = self._load(self.reports, report_id, "no report")
         appeals = []
         decisions = []
@@ -1217,29 +1043,5 @@ class ProofPilot(gl.Contract):
             return self._page(self.report_ids_by_campaign.get(campaign_id, "[]"), offset, limit)
         a = []
         for x in self.report_ids:
-            a.append(x)
-        return self._j(a[offset:offset + limit])
-
-    @gl.public.view
-    def list_appeals(self, submission_id: str = "", report_id: str = "", offset: int = 0, limit: int = 50) -> str:
-        self._page_ok(offset, limit)
-        if report_id:
-            return self._page(self.appeal_ids_by_report.get(report_id, "[]"), offset, limit)
-        if submission_id:
-            return self._page(self.appeal_ids_by_submission.get(submission_id, "[]"), offset, limit)
-        a = []
-        for x in self.appeal_ids:
-            a.append(x)
-        return self._j(a[offset:offset + limit])
-
-    @gl.public.view
-    def list_human_decisions(self, submission_id: str = "", report_id: str = "", offset: int = 0, limit: int = 50) -> str:
-        self._page_ok(offset, limit)
-        if report_id:
-            return self._page(self.human_decision_ids_by_report.get(report_id, "[]"), offset, limit)
-        if submission_id:
-            return self._page(self.human_decision_ids_by_submission.get(submission_id, "[]"), offset, limit)
-        a = []
-        for x in self.human_decision_ids:
             a.append(x)
         return self._j(a[offset:offset + limit])

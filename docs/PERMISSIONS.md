@@ -73,7 +73,6 @@ The following are public:
 - `get_latest_report`
 - `get_builder_profile`
 - `get_appeal`
-- `get_human_decision`
 - `get_report_decisions`
 
 ### List Methods
@@ -83,8 +82,6 @@ The following are public with pagination bounds:
 - `list_campaigns`
 - `list_submissions`
 - `list_reports`
-- `list_appeals`
-- `list_human_decisions`
 
 ## Admin Safety Rules
 
